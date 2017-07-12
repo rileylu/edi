@@ -3,5 +3,7 @@
 
 int main()
 {
+	WSASocket();
+	WSARecv();
 	return 0;
 }
