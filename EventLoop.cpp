@@ -41,3 +41,7 @@ void EventLoop::loop() {
 void EventLoop::abortNotInLoopThread() {
 
 }
+
+void EventLoop::updateChannel(Channel *) {
+
+}

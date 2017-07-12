@@ -9,6 +9,7 @@
 #include <atomic>
 #include <thread>
 
+class Channel;
 class EventLoop : Noncopyable {
 public:
     EventLoop();
@@ -28,6 +29,8 @@ public:
     bool isInLoopThread() const {
         return threadId_ == std::this_thread::get_id();
     }
+
+    void updateChannel(Channel *);
 
 private:
     void abortNotInLoopThread();
