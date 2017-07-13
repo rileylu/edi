@@ -42,10 +42,12 @@ void IOCP::stop()
 void IOCP::workerThread()
 {
 	//log
-	std::cout << "WorkerThread " << std::this_thread::get_id() << " is running" << std::endl;
+	static thread_local std::thread::id t_thread_id = std::this_thread::get_id();
+	std::cout << "WorkerThread " <<t_thread_id << " is running" << std::endl;
 	countDown_->countDown();
 	while (true)
 	{
+		std::cout << "WorkerThread " << t_thread_id << " process callback" << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(10));
 	}
 }
