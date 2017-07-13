@@ -20,4 +20,3 @@ private:
 	WSADATA wsaData_;
 };
 
-Net& network = Singleton<Net>::Instance();

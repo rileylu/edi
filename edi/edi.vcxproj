@@ -139,9 +139,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="iocp.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="net.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="countdown.h" />
+    <ClInclude Include="iocp.h" />
     <ClInclude Include="net.h" />
     <ClInclude Include="noncopyable.h" />
     <ClInclude Include="singleton.h" />

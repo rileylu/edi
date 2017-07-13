@@ -1,9 +1,10 @@
-#include "net.h"
+#include "iocp.h"
+#include "singleton.h"
 #include <iostream>
 
 int main()
 {
-	WSASocket();
-	WSARecv();
+	IOCP &iocp = Singleton<IOCP>::Instance();
+	iocp.start();
 	return 0;
 }
