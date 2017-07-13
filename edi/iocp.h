@@ -12,6 +12,7 @@ public:
 	IOCP();
 	~IOCP();
 	void start();
+	void stop();
 	bool isRunning() const
 	{
 		return running_;

@@ -35,6 +35,10 @@ void IOCP::start()
 	std::cout << "IOCP is running" << std::endl;
 }
 
+void IOCP::stop()
+{
+}
+
 void IOCP::workerThread()
 {
 	//log
