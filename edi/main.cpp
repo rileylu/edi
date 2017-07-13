@@ -1,10 +1,10 @@
-#include "iocp.h"
-#include "singleton.h"
+#include "fixedbuffer.h"
 #include <iostream>
 
 int main()
 {
-	IOCP &iocp = Singleton<IOCP>::Instance();
-	iocp.start();
+	std::string str = "haha";
+	buffer::FixedBuffer<buffer::SMALL> buf;
+	buf.append(std::move(str));
 	return 0;
 }

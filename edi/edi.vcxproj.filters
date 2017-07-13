@@ -41,5 +41,8 @@
     <ClInclude Include="countdown.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="fixedbuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

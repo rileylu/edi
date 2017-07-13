@@ -23,7 +23,7 @@
     <ProjectGuid>{D5AAF554-4DED-4769-8F31-F7C5C958A058}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>edi</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -144,6 +144,7 @@
     <ClCompile Include="net.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="fixedbuffer.h" />
     <ClInclude Include="countdown.h" />
     <ClInclude Include="iocp.h" />
     <ClInclude Include="net.h" />
