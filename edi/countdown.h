@@ -5,7 +5,7 @@ class CountDown
 public:
 	CountDown(int n) :n_(n)
 	{}
-	void decrease()
+	void countDown()
 	{
 			std::lock_guard<std::mutex> lk(m_);
 			if((--n_)==0)

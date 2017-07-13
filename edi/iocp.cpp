@@ -43,7 +43,7 @@ void IOCP::workerThread()
 {
 	//log
 	std::cout << "WorkerThread " << std::this_thread::get_id() << " is running" << std::endl;
-	countDown_->decrease();
+	countDown_->countDown();
 	while (true)
 	{
 		std::this_thread::sleep_for(std::chrono::seconds(10));
