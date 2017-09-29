@@ -5,6 +5,7 @@
 #include "net.h"
 #include "Singleton.h"
 #include <map>
+#include <memory>
 
 namespace edi {
 	struct Per_IO_Data
@@ -21,6 +22,7 @@ namespace edi {
 			Read,
 			Write
 		};
+
 		struct PerIOData
 		{
 			OVERLAPPED overlapped;
@@ -43,6 +45,7 @@ namespace edi {
 			SOCKET _socket;
 			std::vector<PerIOData*> _recvDataList;
 		};
+		using PerIODataPtr = std::shared_ptr<PerIOData>;
 
 	};
 

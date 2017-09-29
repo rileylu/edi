@@ -119,6 +119,7 @@
     <ClInclude Include="BasicStream.h" />
     <ClInclude Include="ByteArray.h" />
     <ClInclude Include="DataSink.h" />
+    <ClInclude Include="IOCPStream.h" />
     <ClInclude Include="iocp_loop.h" />
     <ClInclude Include="IStream.h" />
     <ClInclude Include="net.h" />
