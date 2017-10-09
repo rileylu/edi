@@ -3,7 +3,7 @@
 #include "iocp_loop.h"
 
 namespace edi {
-	class IOCPStream :public BasicStream,public NonCopyable {
+	class IOCPStream :public BasicStream, public NonCopyable {
 	public:
 		IOCPStream(SOCKET clientSocket)
 			:BasicStream(clientSocket)

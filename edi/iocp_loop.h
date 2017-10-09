@@ -31,22 +31,20 @@ namespace edi {
 			OperationType operationType;
 		};
 
-		class Context
-		{
-		public:
-			Context();
-			~Context();
-			SOCKET GetSocket() const
-			{
-				return _socket;
-			}
-			void AppendToRecvList(PerIOData* per_io_data);
-		private:
-			SOCKET _socket;
-			std::vector<PerIOData*> _recvDataList;
-		};
 		using PerIODataPtr = std::shared_ptr<PerIOData>;
 
+	};
+	class Context
+	{
+	public:
+		Context();
+		~Context();
+		SOCKET GetSocket() const
+		{
+			return _socket;
+		}
+	private:
+		SOCKET _socket;
 	};
 
 	class IStream;

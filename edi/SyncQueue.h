@@ -25,7 +25,7 @@ public:
 		_notEmpty.wait(locker, [this] {return _needStop || NotEmpty(); });
 		if (_needStop)
 			return;
-		l= std::move(_queue);
+		l = std::move(_queue);
 		_notFull.notify_one();
 	}
 	void Take(T& t)

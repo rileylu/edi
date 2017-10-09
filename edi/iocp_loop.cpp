@@ -1,19 +1,14 @@
 #include "iocp_loop.h"
 using edi::IOCP;
 using edi::IOCPLoop;
-
-IOCP::Context::Context()
+using edi::Context;
+Context::Context()
 	:_socket(INVALID_SOCKET)
 {
 }
 
-IOCP::Context::~Context()
+Context::~Context()
 {
-}
-
-void IOCP::Context::AppendToRecvList(PerIOData* per_io_data)
-{
-	_recvDataList.push_back(per_io_data);
 }
 
 IOCPLoop::IOCPLoop()
@@ -54,17 +49,17 @@ void IOCPLoop::_IOThreadFun()
 	{
 		int ret = ::GetQueuedCompletionStatus(_completionPort, &numberOfBytesTransferred, &key, &lpOverlapped, -1);
 		IOCP::PerIOData *perIoData = reinterpret_cast<IOCP::PerIOData*>(lpOverlapped);
-		IOCP::Context *context = reinterpret_cast<IOCP::Context*>(key);
+		Context *context = reinterpret_cast<Context*>(key);
 		if (perIoData->operationType == IOCP::OperationType::Read)
 		{
-			context->AppendToRecvList(perIoData);
+			//do something sync??
+
 		}
-		else if(perIoData->operationType==IOCP::OperationType::Write)
+		else if (perIoData->operationType == IOCP::OperationType::Write)
 		{
 		}
 		IOCP::PerIOData *newData = new IOCP::PerIOData;
 		DWORD flag = 0;
-		DWORD receivedBytes = 0;
-		::WSARecv(context->GetSocket(), &newData->wsabuf, 1,&receivedBytes,&flag, &newData->overlapped, NULL);
+		::WSARecv(context->GetSocket(), &newData->wsabuf, 1, NULL, &flag, &newData->overlapped, NULL);
 	}
 }

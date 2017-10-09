@@ -11,8 +11,8 @@ public:
 			_instance = new T(std::forward<Args>(args)...);
 		return _instance;
 	}
-	Singleton(const Singleton&)=delete;
-	Singleton& operator=(const Singleton&)=delete;
+	Singleton(const Singleton&) = delete;
+	Singleton& operator=(const Singleton&) = delete;
 protected:
 	Singleton() = default;
 private:
