@@ -14,8 +14,8 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 {
 	try
 	{
-		ftpContext->GetCtrlSession()->async_connect([ftpContext, filename, this] {
-			ftpContext->GetCtrlSession()->async_readutil("\r\n", [ftpContext, filename, this] {
+		ftpContext->GetCtrlSession()->async_connect([this, ftpContext, filename] {
+			std::function<void()> fun = [this, ftpContext, filename] {
 				std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
 				std::string res;
 				while (std::getline(is, res))
@@ -30,7 +30,8 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 					else
 						throw std::exception(FTPERROR);
 				}
-			});
+			};
+			ftpContext->GetCtrlSession()->async_readutil(std::string("\r\n"), fun);
 		});
 	}
 	catch (const std::exception &ec)
