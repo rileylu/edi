@@ -85,7 +85,7 @@ void Session::async_read(Fun && f, Args && ...args)
 	boost::asio::async_read(_sock, _response_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
-			if (ec.value() == 2)
+			if (ec.value() != 2)
 				std::cerr << ec.message() << std::endl;
 			_sock.close();
 			_ec = ec;

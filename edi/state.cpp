@@ -181,7 +181,8 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 							ftpContext->GetDataSession()->async_connect([ftpContext, filename, this] {
 								if (ftpContext->GetDataSession()->Err())
 								{
-									std::cerr << ftpContext->GetDataSession()->Err().message() << std::endl;
+									std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+									ftpContext->ReBuild();
 									ftpContext->DoSendFile(filename);
 									return;
 								}
@@ -302,9 +303,9 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 									ftpContext->DoSendFile(filename);
 									return;
 								}
-						}
-					});
-			}
+							}
+						});
+					}
 					else if (res.find("550") == 0)
 					{
 						std::cerr << "no file" << std::endl;
@@ -324,7 +325,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 						ftpContext->DoSendFile(filename);
 						return;
 					}
-		}
+				}
 				else
 				{
 					std::cerr << res << std::endl;
@@ -332,8 +333,8 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 					ftpContext->DoSendFile(filename);
 					return;
 				}
-	});
-});
+			});
+		});
 	});
 }
 
