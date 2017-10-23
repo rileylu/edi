@@ -13,17 +13,19 @@ public:
 		_sock(ios),
 		_ep(boost::asio::ip::address::from_string(raw_ip_address), port)
 	{}
+
+
 	template<typename Fun, typename...Args>
-	void async_connect(Fun& f, Args&&... args);
+	void async_connect(Fun&& f, Args&&... args);
 
 	template<typename Fun, typename... Args>
-	void async_send(const std::string& str, Fun& f, Args&&... args);
+	void async_send(const std::string& str, Fun&& f, Args&&... args);
 
 	template<typename Fun, typename... Args>
-	void async_read(Fun& f, Args&&... args);
+	void async_read(Fun&& f, Args&&... args);
 
 	template<typename Fun, typename... Args>
-	void async_readutil(const std::string& delim, Fun& fun, Args&&... args);
+	void async_readutil(const std::string& delim, Fun&& fun, Args&&... args);
 
 	void Close() {
 		_sock.close();
@@ -48,31 +50,29 @@ private:
 };
 
 template<typename Fun, typename ...Args>
-void Session::async_connect(Fun &f, Args&&... args)
+void Session::async_connect(Fun &&f, Args&&... args)
 {
-	_sock.async_connect(_ep, [this, f, &args...](const boost::system::error_code& ec) {
+	_sock.async_connect(_ep, [this, f, args...](const boost::system::error_code& ec) {
 		if (ec)
 		{
 			std::cerr << ec.message() << std::endl;
 			_ec = ec;
 			_sock.close();
-			throw ec;
 		}
 		f(args...);
 	});
 }
 
 template<typename Fun, typename ...Args>
-void Session::async_send(const std::string& str, Fun & f, Args && ...args)
+void Session::async_send(const std::string& str, Fun && f, Args && ...args)
 {
 	_request_buf.sputn(str.c_str(), str.size());
-	asio::async_write(_sock, _request_buf, [this, f, &args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
+	asio::async_write(_sock, _request_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
 			std::cerr << ec.message() << std::endl;
 			_sock.close();
 			_ec = ec;
-			throw ec;
 		}
 		f(args...);
 	});
@@ -80,30 +80,28 @@ void Session::async_send(const std::string& str, Fun & f, Args && ...args)
 
 
 template<typename Fun, typename ...Args>
-void Session::async_read(Fun & f, Args && ...args)
+void Session::async_read(Fun && f, Args && ...args)
 {
-	asio::async_read(_sock, _response_buf, [this, f, &args...](const system::error_code& ec, std::size_t bytes_transferred) {
-		if (ec.value() != 2)
+	boost::asio::async_read(_sock, _response_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
+		if (ec)
 		{
-			std::cerr << ec.message() << std::endl;
+			if (ec.value() == 2)
+				std::cerr << ec.message() << std::endl;
 			_sock.close();
 			_ec = ec;
-			throw ec;
 		}
 		f(args...);
 	});
 }
-
 template<typename Fun, typename ...Args>
-void Session::async_readutil(const std::string & delim, Fun & f, Args && ...args)
+void Session::async_readutil(const std::string & delim, Fun && f, Args && ...args)
 {
-	asio::async_read_until(_sock, _response_buf, delim, [this, f, &args...](const system::error_code& ec, std::size_t bytes_transferred) {
-		if (ec.value() != 2)
+	boost::asio::async_read_until(_sock, _response_buf, delim, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
+		if (ec)
 		{
 			std::cerr << ec.message() << std::endl;
 			_sock.close();
 			_ec = ec;
-			throw ec;
 		}
 		f(args...);
 	});
