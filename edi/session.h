@@ -15,8 +15,7 @@ struct Session {
 	asio::ip::tcp::endpoint _ep;
 
 	asio::streambuf _response_buf;
-	//asio::streambuf _request_buf;
-	std::string _request_buf;
+	asio::streambuf _request_buf;
 	system::error_code _ec;
 	bool _was_cancelled;
 	std::mutex _cancel_guard;

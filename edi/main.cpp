@@ -19,7 +19,7 @@ int main()
 	asio::io_service ios;
 	asio::io_service::work w(ios);
 	std::vector<std::thread> tds;
-	std::shared_ptr<lockfree::queue<std::string*>> fileList = std::make_shared<lockfree::queue<std::string*>>(50000);
+	std::shared_ptr<threadsafe_queue<std::string>> fileList(new threadsafe_queue<std::string>);
 
 	std::ifstream in("list.txt");
 	std::string line;
@@ -30,7 +30,7 @@ int main()
 			std::size_t pos;
 			if ((pos = line.find('\r')) != line.npos)
 				line.erase(pos, 1);
-			std::string *tmp = new std::string("/OUT/stockout/" + line);
+			std::string tmp = std::string("/OUT/stockout/" + line);
 			fileList->push(tmp);
 		}
 	}

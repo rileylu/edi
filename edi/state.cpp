@@ -4,6 +4,7 @@
 #include <sstream>
 #include <regex>
 #include <fstream>
+#include "threadsafe_queue.h"
 
 
 using namespace boost;
@@ -52,7 +53,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 	request += "USER ";
 	request += ftpContext->GetUser();
 	request += "\r\n";
-	ftpContext->GetCtrlSession()->_request_buf = std::move(request);
+	ftpContext->GetCtrlSession()->_request_buf.sputn(request.c_str(),request.size());
 	auto user = [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
@@ -78,8 +79,8 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 					request += "PASS ";
 					request += ftpContext->GetPWD();
 					request += "\r\n";
-					ftpContext->GetCtrlSession()->_request_buf = std::move(request);
-					asio::async_write(ftpContext->GetCtrlSession()->_sock, asio::buffer(ftpContext->GetCtrlSession()->_request_buf), [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
+					ftpContext->GetCtrlSession()->_request_buf.sputn(request.c_str(),request.size());
+					asio::async_write(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_request_buf, [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
 						if (ec)
 						{
 							std::cerr << ec.message() << std::endl;
@@ -118,14 +119,14 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 		});
 
 	};
-	asio::async_write(ftpContext->GetCtrlSession()->_sock, asio::buffer(ftpContext->GetCtrlSession()->_request_buf), user);
+	asio::async_write(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_request_buf, user);
 }
 
 void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const std::string & filename)
 {
 	std::string request = "EPSV\r\n";
-	ftpContext->GetCtrlSession()->_request_buf = std::move(request);
-	asio::async_write(ftpContext->GetCtrlSession()->_sock, asio::buffer(ftpContext->GetCtrlSession()->_request_buf), [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
+	ftpContext->GetCtrlSession()->_request_buf.sputn(request.c_str(),request.size());
+	asio::async_write(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_request_buf, [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
 			std::cerr << ec.message() << std::endl;
@@ -189,8 +190,8 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 	std::string cmd = "RETR ";
 	cmd += filename;
 	cmd += "\r\n";
-	ftpContext->GetCtrlSession()->_request_buf = std::move(cmd);
-	asio::async_write(ftpContext->GetCtrlSession()->_sock, asio::buffer(ftpContext->GetCtrlSession()->_request_buf), [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
+	ftpContext->GetCtrlSession()->_request_buf.sputn(cmd.c_str(),cmd.size());
+	asio::async_write(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_request_buf, [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
 			std::cerr << ec.message() << std::endl;
@@ -233,10 +234,13 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 							if (res.find("226") == 0)
 							{
 								ChangeStatus(ftpContext, &LoginReadyState::Instance());
-								std::string *fn = nullptr;
-								if (ftpContext->_fileList->pop(fn))
-									ftpContext->DoSendFile(std::string(*fn));
-								delete fn;
+								ftpContext->ReadyForTransfer();
+								if (!ftpContext->_fileList->empty())
+								{
+									std::string fn;
+									ftpContext->_fileList->wait_and_pop(fn);
+									ftpContext->DoSendFile(fn);
+								}
 							}
 							else
 							{

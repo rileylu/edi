@@ -5,7 +5,7 @@
 
 
 FtpContext::FtpContext(asio::io_service& ios, const std::string & ip, unsigned short port, const std::string& user, const std::string& pwd)
-	:_ios(ios), _ip_address(ip), _user(user), _pwd(pwd), _state(&ConnectionClosedState::Instance()), _ctrlSession(nullptr), _dataSession(nullptr), _ready_for_transfer(true), _data_connection_finished(true)
+	:_ios(ios), _ip_address(ip), _user(user), _pwd(pwd),_fileList(std::make_shared<threadsafe_queue<std::string>>()), _state(&ConnectionClosedState::Instance()), _ctrlSession(nullptr), _dataSession(nullptr), _ready_for_transfer(true)
 {
 	_ctrlSession = std::make_shared<Session>(ios, ip, port);
 }
@@ -16,15 +16,12 @@ void FtpContext::SendFile(const std::string & fileName)
 	DoSendFile(fileName);
 }
 
-void FtpContext::SendFile(std::shared_ptr<boost::lockfree::queue<std::string*>> fileList)
+void FtpContext::SendFile(std::shared_ptr<threadsafe_queue<std::string>> fileList)
 {
 	_fileList = fileList;
-	std::string *filename = nullptr;
-	if (fileList->pop(filename))
-	{
-		DoSendFile(*filename);
-		delete filename;
-	}
+	std::string filename;
+	_fileList->wait_and_pop(filename);
+	DoSendFile(filename);
 }
 
 void FtpContext::RecvFile(const std::string & fileName)
