@@ -12,7 +12,7 @@ class threadsafe_queue;
 class State;
 class FtpContext :public std::enable_shared_from_this<FtpContext> {
 public:
-	FtpContext(asio::io_service& ios, const std::string& ip, unsigned short port, const std::string& user, const std::string& pwd);
+	FtpContext(boost::asio::io_service& ios, const std::string& ip, unsigned short port, const std::string& user, const std::string& pwd);
 	void SendFile(const std::string& fileName);
 	void SendFile(std::shared_ptr<threadsafe_queue<std::string>> fileList);
 	void RecvFile(const std::string& fileName);
@@ -36,7 +36,11 @@ public:
 	std::string GetIP() const {
 		return _ip_address;
 	}
-	asio::io_service& GetIOS() const {
+	unsigned short GetPort() const {
+		return _port;
+	}
+
+	boost::asio::io_service& GetIOS() const {
 		return _ios;
 	}
 private:
@@ -60,8 +64,9 @@ private:
 	}
 
 private:
-	asio::io_service& _ios;
+	boost::asio::io_service& _ios;
 	std::string _ip_address;
+	unsigned short _port;
 	std::string _user;
 	std::string _pwd;
 	std::shared_ptr<threadsafe_queue<std::string>> _fileList;

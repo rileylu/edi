@@ -14,6 +14,8 @@
 #include <fstream>
 #include "threadsafe_queue.h"
 
+using namespace boost;
+
 int main()
 {
 	asio::io_service ios;
@@ -45,7 +47,7 @@ int main()
 	}
 
 	std::vector<std::shared_ptr<FtpContext>> ftpContexts;
-	for (int i = 0; i < 20; ++i)
+	for (int i = 0; i < 1; ++i)
 	{
 		ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "124.207.27.34", 21, "gzftpqas01", "001testgz"));
 	}

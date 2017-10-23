@@ -8,39 +8,37 @@
 
 
 using namespace boost;
+#define FTPERROR "FTPERROR"
 
 void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
 {
-	auto handler = [ftpContext, filename, this](const boost::system::error_code& ec) {
-		if (ec)
-		{
-			std::cerr << "connection error" << std::endl;
-			return;
-		}
-		asio::async_read_until(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_response_buf, "\r\n", [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-			if (ec)
-			{
-				return;
-			}
-			std::istream is(&ftpContext->GetCtrlSession()->_response_buf);
-			std::string res;
-			while (std::getline(is, res))
-			{
-				std::cout << res << std::endl;
-				if (res[3] == '-')
-					continue;
-				else if (res.find("220") != res.npos)
+	try
+	{
+		ftpContext->GetCtrlSession()->async_connect([ftpContext, filename, this] {
+			ftpContext->GetCtrlSession()->async_readutil("\r\n", [ftpContext, filename, this] {
+				std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
+				std::string res;
+				while (std::getline(is, res))
 				{
-					auto& connectionReadyState = ConnectionReadyState::Instance();
-					ChangeStatus(ftpContext, &connectionReadyState);
-					ftpContext->DoSendFile(filename);
+					if (res[3] == '-')
+						continue;
+					else if (res.find("220") == 0)
+					{
+						ChangeStatus(ftpContext, &ConnectionReadyState::Instance());
+						ftpContext->DoSendFile(filename);
+					}
+					else
+						throw std::exception(FTPERROR);
 				}
-				else
-					return;
-			}
+			});
 		});
-	};
-	ftpContext->GetCtrlSession()->_sock.async_connect(ftpContext->GetCtrlSession()->_ep, handler);
+	}
+	catch (const std::exception &ec)
+	{
+		std::cerr << ec.what() << std::endl;
+		ftpContext.reset(new FtpContext(ftpContext->GetIOS(), ftpContext->GetIP(), ftpContext->GetPort(), ftpContext->GetUser(), ftpContext->GetPWD()));
+		ftpContext->DoSendFile(filename);
+	}
 }
 
 void ConnectionClosedState::DoList(std::shared_ptr<FtpContext> ftpContext, const std::string & dir)
@@ -53,136 +51,105 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 	request += "USER ";
 	request += ftpContext->GetUser();
 	request += "\r\n";
-	ftpContext->GetCtrlSession()->_request_buf.sputn(request.c_str(),request.size());
-	auto user = [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-		if (ec)
-		{
-			std::cerr << ec.message() << std::endl;
-			return;
-		}
-		asio::async_read_until(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_response_buf, "\r\n", [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-			if (ec)
-			{
-				std::cerr << ec.message() << std::endl;
-				return;
-			}
-			std::istream is(&ftpContext->GetCtrlSession()->_response_buf);
-			std::string res;
-			while (std::getline(is, res))
-			{
-				std::cout << res << std::endl;
-				if (res[3] == '-')
-					continue;
-				else if (res.find("331") != res.npos)
+	try
+	{
+		ftpContext->GetCtrlSession()->async_send(request, [ftpContext, filename, this] {
+			ftpContext->GetCtrlSession()->async_readutil("\r\n", [ftpContext, filename, this] {
+				std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
+				std::string res;
+				if (std::getline(is, res))
 				{
-					std::string request;
-					request += "PASS ";
-					request += ftpContext->GetPWD();
-					request += "\r\n";
-					ftpContext->GetCtrlSession()->_request_buf.sputn(request.c_str(),request.size());
-					asio::async_write(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_request_buf, [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-						if (ec)
-						{
-							std::cerr << ec.message() << std::endl;
-							return;
-						}
-						asio::async_read_until(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_response_buf, "\r\n", [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-							if (ec)
-							{
-								std::cerr << ec.message() << std::endl;
-								return;
-							}
-							std::istream is(&ftpContext->GetCtrlSession()->_response_buf);
-							std::string res;
-							while (std::getline(is, res))
-							{
-								std::cout << res << std::endl;
-								if (res[3] == '-')
-									continue;
-								else if (res.find("230") != res.npos)
+					if (res.find("331") == 0)
+					{
+						std::string request;
+						request += "PASS ";
+						request += ftpContext->GetPWD();
+						request += "\r\n";
+						ftpContext->GetCtrlSession()->async_send(request, [ftpContext, filename, this] {
+							ftpContext->GetCtrlSession()->async_readutil("\r\n", [ftpContext, filename, this] {
+								std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
+								std::string res;
+								if (std::getline(is, res))
 								{
-									auto& loginReadyState = LoginReadyState::Instance();
-									ChangeStatus(ftpContext, &loginReadyState);
-									ftpContext->DoSendFile(filename);
+									if (res.find(230) == 0)
+									{
+										ChangeStatus(ftpContext, &LoginReadyState::Instance());
+										ftpContext->DoSendFile(filename);
+									}
+									else
+										throw std::exception(FTPERROR);
 								}
-								else
-									return;
-							}
-
-
+							});
 						});
-					});
+					}
+					else
+						throw std::exception(FTPERROR);
 				}
 				else
-					return;
-			}
+					throw std::exception(FTPERROR);
+			});
 		});
-
-	};
-	asio::async_write(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_request_buf, user);
+	}
+	catch (const std::exception& ec)
+	{
+		std::cerr << ec.what() << std::endl;
+		ftpContext.reset(new FtpContext(ftpContext->GetIOS(), ftpContext->GetIP(), ftpContext->GetPort(), ftpContext->GetUser(), ftpContext->GetPWD()));
+		ftpContext->DoSendFile(filename);
+	}
 }
 
 void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const std::string & filename)
 {
 	std::string request = "EPSV\r\n";
-	ftpContext->GetCtrlSession()->_request_buf.sputn(request.c_str(),request.size());
-	asio::async_write(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_request_buf, [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-		if (ec)
-		{
-			std::cerr << ec.message() << std::endl;
-			return;
-		}
-		asio::async_read_until(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_response_buf, "\r\n", [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-			if (ec)
-			{
-				std::cerr << ec.message() << std::endl;
-				return;
-			}
-			std::istream is(&ftpContext->GetCtrlSession()->_response_buf);
-			std::string res;
-			while (std::getline(is, res))
-			{
-				std::cout << res << std::endl;
-				if (res[3] == '-')
-					continue;
-				else if (res.find("229") != res.npos)
+	try
+	{
+		ftpContext->GetCtrlSession()->async_send(request, [this, ftpContext, filename] {
+			ftpContext->GetCtrlSession()->async_read([this, ftpContext, filename] {
+				std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
+				std::string res;
+				if (res.find("229") == 0)
 				{
-					std::regex port_regex(R"(.*\|{3}([0-9]+)\|{1}.*)");
-					std::smatch results;
-					unsigned short port = 0;
-					if (std::regex_search(res, results, port_regex))
+					try
 					{
-						try
+						std::regex port_regex(R"(.*\|{3}([0-9]+)\|{1}.*)");
+						std::smatch results;
+						unsigned short port = 0;
+						if (std::regex_search(res, results, port_regex))
 						{
 							port = std::stoul(std::string(results[1].first, results[1].second));
+							ftpContext->BuildDataSession(port);
+							try {
+								ftpContext->GetDataSession()->async_connect([ftpContext, filename, this] {
+									ChangeStatus(ftpContext, &ReadyForTransferState::Instance());
+									ftpContext->DoSendFile(filename);
+								});
+							}
+							catch (const system::error_code& ec)
+							{
+								std::cout << ec.message() << std::endl;
+								ftpContext->DoSendFile(filename);
+							}
 						}
-						catch (const std::invalid_argument &e)
-						{
-							continue;
-						}
-					}
-					else
-					{
-						return;
-					}
-					ftpContext->BuildDataSession(port);
-					ftpContext->GetDataSession()->_sock.async_connect(ftpContext->GetDataSession()->_ep, [this, ftpContext, filename](const system::error_code& ec) {
-						if (ec)
-						{
-							std::cerr << ec.message() << std::endl;
+						else
 							ftpContext->DoSendFile(filename);
-							return;
-						}
-						auto& readyForTransferState = ReadyForTransferState::Instance();
-						ChangeStatus(ftpContext, &readyForTransferState);
+					}
+					catch (const std::invalid_argument &e)
+					{
 						ftpContext->DoSendFile(filename);
-					});
+					}
 				}
 				else
-					return;
-			}
+					throw std::exception(FTPERROR);
+
+			});
 		});
-	});
+	}
+	catch (const std::exception& ec)
+	{
+		std::cerr << ec.what() << std::endl;
+		ftpContext.reset(new FtpContext(ftpContext->GetIOS(), ftpContext->GetIP(), ftpContext->GetPort(), ftpContext->GetUser(), ftpContext->GetPWD()));
+		ftpContext->DoSendFile(filename);
+	}
 }
 
 void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const std::string & filename)
@@ -190,72 +157,70 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 	std::string cmd = "RETR ";
 	cmd += filename;
 	cmd += "\r\n";
-	ftpContext->GetCtrlSession()->_request_buf.sputn(cmd.c_str(),cmd.size());
-	asio::async_write(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_request_buf, [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-		if (ec)
-		{
-			std::cerr << ec.message() << std::endl;
-			return;
-		}
-		std::function<void(const system::error_code&, std::size_t)>  downloadFile = [this, ftpContext, filename, &downloadFile](const system::error_code& ec, std::size_t bytes_transferred) {
-			if (ec.value() == 2)
-			{
-				std::istream is(&ftpContext->GetDataSession()->_response_buf);
-				asio::streambuf::const_buffers_type cbt = ftpContext->GetDataSession()->_response_buf.data();
-				std::string res(asio::buffers_begin(cbt), asio::buffers_end(cbt));
-				std::string newFilename = std::move(filename);
-				newFilename.erase(0, newFilename.find_last_of('/') + 1);
-				std::ofstream of(newFilename);
-				std::copy(asio::buffers_begin(cbt), asio::buffers_end(cbt), std::ostream_iterator<char>(of));
-				of.flush();
-				of.close();
-				ftpContext->GetDataSession()->_sock.close();
-				asio::async_read_until(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_response_buf, "\r\n", [this, ftpContext, filename](const system::error_code& ec, std::size_t bytes_transferred) {
-					if (ec)
-					{
-						std::cerr << ec.message() << std::endl;
-						return;
-					}
-					std::istream in(&ftpContext->GetCtrlSession()->_response_buf);
+	try
+	{
+		ftpContext->GetCtrlSession()->async_send(cmd, [this, filename, ftpContext] {
+			ftpContext->GetCtrlSession()->async_read([this, filename, ftpContext] {
+				if (ftpContext->GetDataSession()->Err().value() == 2)
+				{
+					std::istream is(ftpContext->GetDataSession()->ResponseBuf());
+					asio::streambuf::const_buffers_type cbt = ftpContext->GetDataSession()->ResponseBuf()->data();
+					std::string newFileName = filename;
+					std::ofstream of(newFileName);
+					std::copy(asio::buffers_begin(cbt), asio::buffers_end(cbt), std::ostream_iterator<char>(of));
+					of.flush();
+					of.close();
+					ftpContext->GetDataSession()->Close();
+				}
+				ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename] {
+					std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
 					std::string res;
-					std::getline(in, res);
-					if (res.find("150") == 0)
+					if (std::getline(is, res))
 					{
-						asio::async_read_until(ftpContext->GetCtrlSession()->_sock, ftpContext->GetCtrlSession()->_response_buf, "\r\n", [this, ftpContext, filename](const system::error_code &ec, std::size_t bytes_transferred) {
-							if (ec)
-							{
-								std::cerr << ec.message() << std::endl;
-								return;
-							}
-							std::istream is(&ftpContext->GetCtrlSession()->_response_buf);
-							std::string res;
-							getline(is, res);
-							std::cout << res << std::endl;
-							if (res.find("226") == 0)
-							{
-								ChangeStatus(ftpContext, &LoginReadyState::Instance());
-								ftpContext->ReadyForTransfer();
-								if (!ftpContext->_fileList->empty())
+						if (res.find("150") == 0)
+						{
+							ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename] {
+								std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
+								std::string res;
+								if (std::getline(is, res))
 								{
-									std::string fn;
-									ftpContext->_fileList->wait_and_pop(fn);
-									ftpContext->DoSendFile(fn);
+									if (res.find("226") == 0)
+									{
+										ChangeStatus(ftpContext, &LoginReadyState::Instance());
+										ftpContext->ReadyForTransfer();
+										if (!ftpContext->_fileList->empty())
+										{
+											std::string fn;
+											ftpContext->_fileList->wait_and_pop(fn);
+											ftpContext->DoSendFile(fn);
+										}
+									}
+									else
+									{
+										throw std::exception(FTPERROR);
+									}
 								}
-							}
-							else
-							{
-								return;
-							}
-
-						});
-
+							});
+						}
+						else
+						{
+							throw std::exception(FTPERROR);
+						}
+					}
+					else
+					{
+						throw std::exception(FTPERROR);
 					}
 				});
-				return;
-			}
-		};
-		asio::async_read(ftpContext->GetDataSession()->_sock, ftpContext->GetDataSession()->_response_buf, downloadFile);
-	});
+			});
+		});
+	}
+	catch (const std::exception& ec)
+	{
+		std::cerr << ec.what() << std::endl;
+		ftpContext.reset(new FtpContext(ftpContext->GetIOS(), ftpContext->GetIP(), ftpContext->GetPort(), ftpContext->GetUser(), ftpContext->GetPWD()));
+		ftpContext->DoSendFile(filename);
+	}
 }
 
 void ReadyForTransferState::DoList(std::shared_ptr<FtpContext> ftpContext, const std::string & dir)

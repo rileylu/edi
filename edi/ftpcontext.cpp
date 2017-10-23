@@ -3,9 +3,9 @@
 #include "state.h"
 #include "threadsafe_queue.h"
 
-
+using namespace boost;
 FtpContext::FtpContext(asio::io_service& ios, const std::string & ip, unsigned short port, const std::string& user, const std::string& pwd)
-	:_ios(ios), _ip_address(ip), _user(user), _pwd(pwd),_fileList(std::make_shared<threadsafe_queue<std::string>>()), _state(&ConnectionClosedState::Instance()), _ctrlSession(nullptr), _dataSession(nullptr), _ready_for_transfer(true)
+	:_ios(ios), _ip_address(ip), _port(port), _user(user), _pwd(pwd), _fileList(std::make_shared<threadsafe_queue<std::string>>()), _state(&ConnectionClosedState::Instance()), _ctrlSession(nullptr), _dataSession(nullptr), _ready_for_transfer(true)
 {
 	_ctrlSession = std::make_shared<Session>(ios, ip, port);
 }
