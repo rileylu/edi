@@ -102,6 +102,13 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 							return;
 						}
 						ftpContext->GetCtrlSession()->async_readutil("\r\n", [ftpContext, filename, this] {
+							if (ftpContext->GetCtrlSession()->Err())
+							{
+								std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+								ftpContext->ReBuild();
+								ftpContext->DoSendFile(filename);
+								return;
+							}
 							std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
 							std::string res;
 							if (std::getline(is, res))
@@ -160,6 +167,13 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 			return;
 		}
 		ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename] {
+			if (ftpContext->GetCtrlSession()->Err())
+			{
+				std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+				ftpContext->ReBuild();
+				ftpContext->DoSendFile(filename);
+				return;
+			}
 			std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
 			std::string res;
 			if (std::getline(is, res))
