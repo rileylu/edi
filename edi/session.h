@@ -59,7 +59,6 @@ void Session::async_connect(Fun &&f, Args&&... args)
 	_sock.async_connect(_ep, [this, f, args...](const boost::system::error_code& ec) {
 		if (ec)
 		{
-			std::cerr << ec.message() << std::endl;
 			_ec = ec;
 		}
 		f(args...);
@@ -73,7 +72,6 @@ void Session::async_send(const std::string& str, Fun && f, Args && ...args)
 	asio::async_write(_sock, _request_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
-			std::cerr << ec.message() << std::endl;
 			_ec = ec;
 		}
 		f(args...);
@@ -87,8 +85,6 @@ void Session::async_read(Fun && f, Args && ...args)
 	boost::asio::async_read(_sock, _response_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
-			if (ec.value() != 2)
-				std::cerr << ec.message() << std::endl;
 			_ec = ec;
 		}
 		f(args...);
@@ -100,7 +96,6 @@ void Session::async_readutil(const std::string & delim, Fun && f, Args && ...arg
 	boost::asio::async_read_until(_sock, _response_buf, delim, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
-			std::cerr << ec.message() << std::endl;
 			_ec = ec;
 		}
 		f(args...);
