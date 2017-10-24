@@ -15,7 +15,7 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 	ftpContext->GetCtrlSession()->async_connect([this, ftpContext, filename] {
 		if (ftpContext->GetCtrlSession()->Err())
 		{
-			std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+			std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetCtrlSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 			ftpContext->ReBuild();
 			ftpContext->DoSendFile(filename);
 			return;
@@ -23,7 +23,7 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 		ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename] {
 			if (ftpContext->GetCtrlSession()->Err())
 			{
-				std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+				std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetCtrlSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 				ftpContext->ReBuild();
 				ftpContext->DoSendFile(filename);
 				return;
@@ -42,12 +42,15 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 					ChangeStatus(ftpContext, &ConnectionReadyState::Instance());
 					ftpContext->DoSendFile(filename);
 				}
+				else if (res.find("421") == 0)
+				{
+					std::cerr << res << std::endl;
+				}
 				else
 				{
 					std::cerr << res << std::endl;
 					ftpContext->ReBuild();
 					ftpContext->DoSendFile(filename);
-					return;
 				}
 			}
 		});
@@ -67,7 +70,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 	ftpContext->GetCtrlSession()->async_send(request, [ftpContext, filename, this] {
 		if (ftpContext->GetCtrlSession()->Err())
 		{
-			std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+			std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetCtrlSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 			ftpContext->ReBuild();
 			ftpContext->DoSendFile(filename);
 			return;
@@ -75,7 +78,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 		ftpContext->GetCtrlSession()->async_readutil("\r\n", [ftpContext, filename, this] {
 			if (ftpContext->GetCtrlSession()->Err())
 			{
-				std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+				std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetCtrlSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 				ftpContext->ReBuild();
 				ftpContext->DoSendFile(filename);
 				return;
@@ -96,7 +99,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 					ftpContext->GetCtrlSession()->async_send(request, [ftpContext, filename, this] {
 						if (ftpContext->GetCtrlSession()->Err())
 						{
-							std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+							std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetCtrlSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 							ftpContext->ReBuild();
 							ftpContext->DoSendFile(filename);
 							return;
@@ -104,7 +107,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 						ftpContext->GetCtrlSession()->async_readutil("\r\n", [ftpContext, filename, this] {
 							if (ftpContext->GetCtrlSession()->Err())
 							{
-								std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+								std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetCtrlSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 								ftpContext->ReBuild();
 								ftpContext->DoSendFile(filename);
 								return;
@@ -161,7 +164,7 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 	ftpContext->GetCtrlSession()->async_send(request, [this, ftpContext, filename] {
 		if (ftpContext->GetCtrlSession()->Err())
 		{
-			std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+			std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetCtrlSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 			ftpContext->ReBuild();
 			ftpContext->DoSendFile(filename);
 			return;
@@ -169,7 +172,7 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 		ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename] {
 			if (ftpContext->GetCtrlSession()->Err())
 			{
-				std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+				std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetCtrlSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 				ftpContext->ReBuild();
 				ftpContext->DoSendFile(filename);
 				return;
@@ -195,8 +198,7 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 							ftpContext->GetDataSession()->async_connect([ftpContext, filename, this] {
 								if (ftpContext->GetDataSession()->Err())
 								{
-									std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
-									ftpContext->ReBuild();
+									std::cerr << __LINE__ << "ErrorCode: " << ftpContext->GetDataSession()->Err().value() << " Message:" << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 									ftpContext->DoSendFile(filename);
 									return;
 								}
@@ -239,7 +241,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 	ftpContext->GetCtrlSession()->async_send(cmd, [this, filename, ftpContext] {
 		if (ftpContext->GetCtrlSession()->Err())
 		{
-			std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+			std::cerr << __LINE__ << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 			ftpContext->ReBuild();
 			ftpContext->DoSendFile(filename);
 			return;
@@ -262,15 +264,15 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 			}
 			else if (ftpContext->GetDataSession()->Err())
 			{
-				std::cerr << ftpContext->GetDataSession()->Err().message() << std::endl;
-				ftpContext->ReBuild();
+				std::cerr << __LINE__ << ftpContext->GetDataSession()->Err().message() << std::endl;
+				ChangeStatus(ftpContext, &LoginReadyState::Instance());
 				ftpContext->DoSendFile(filename);
 				return;
 			}
 			ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename] {
 				if (ftpContext->GetCtrlSession()->Err())
 				{
-					std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+					std::cerr << __LINE__ << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 					ftpContext->ReBuild();
 					ftpContext->DoSendFile(filename);
 					return;
@@ -287,7 +289,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 						ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename] {
 							if (ftpContext->GetCtrlSession()->Err())
 							{
-								std::cerr << ftpContext->GetCtrlSession()->Err().message() << std::endl;
+								std::cerr << __LINE__ << ftpContext->GetCtrlSession()->Err().message() << std::endl;
 								ftpContext->ReBuild();
 								ftpContext->DoSendFile(filename);
 								return;

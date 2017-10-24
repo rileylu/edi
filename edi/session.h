@@ -13,15 +13,15 @@ public:
 		_sock(ios, boost::asio::ip::tcp::v4()),
 		_ep(boost::asio::ip::address::from_string(raw_ip_address), port)
 	{
-		boost::asio::ip::tcp::no_delay option1(true);
-		_sock.set_option(option1);
-		boost::asio::socket_base::reuse_address option2(true);
-		_sock.set_option(option2);
+		_sock.set_option(boost::asio::ip::tcp::no_delay(true));
+		_sock.set_option(boost::asio::socket_base::reuse_address(true));
+		_sock.set_option(boost::asio::socket_base::linger(true, 0));
 	}
-	~Session() {
-		Close();
+	~Session()
+	{
+		_sock.shutdown(boost::asio::socket_base::shutdown_both, _ec);
+		_sock.close(_ec);
 	}
-
 
 	template<typename Fun, typename...Args>
 	void async_connect(Fun&& f, Args&&... args);
@@ -34,11 +34,6 @@ public:
 
 	template<typename Fun, typename... Args>
 	void async_readutil(const std::string& delim, Fun&& fun, Args&&... args);
-
-	void Close() {
-		_sock.shutdown(boost::asio::socket_base::shutdown_both);
-		_sock.close();
-	}
 
 	boost::system::error_code Err() const {
 		return _ec;

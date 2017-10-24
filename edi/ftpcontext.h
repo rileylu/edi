@@ -44,11 +44,7 @@ public:
 		return _ios;
 	}
 private:
-	void ReBuild() {
-		auto ftpContext = std::make_shared<FtpContext>(_ios, _ip_address, _port, _user, _pwd);
-		ftpContext->_fileList = _fileList;
-		shared_from_this() = ftpContext;
-	}
+	void ReBuild();
 	void ChangeState(State* s) {
 		_state = s;
 	}
