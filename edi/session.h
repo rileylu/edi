@@ -10,9 +10,17 @@ public:
 	Session(boost::asio::io_service &ios,
 		const std::string& raw_ip_address,
 		unsigned short port) :
-		_sock(ios),
+		_sock(ios, boost::asio::ip::tcp::v4()),
 		_ep(boost::asio::ip::address::from_string(raw_ip_address), port)
-	{}
+	{
+		boost::asio::ip::tcp::no_delay option1(true);
+		_sock.set_option(option1);
+		boost::asio::socket_base::reuse_address option2(true);
+		_sock.set_option(option2);
+	}
+	~Session() {
+		Close();
+	}
 
 
 	template<typename Fun, typename...Args>
@@ -28,6 +36,7 @@ public:
 	void async_readutil(const std::string& delim, Fun&& fun, Args&&... args);
 
 	void Close() {
+		_sock.shutdown(boost::asio::socket_base::shutdown_both);
 		_sock.close();
 	}
 
@@ -57,7 +66,6 @@ void Session::async_connect(Fun &&f, Args&&... args)
 		{
 			std::cerr << ec.message() << std::endl;
 			_ec = ec;
-			_sock.close();
 		}
 		f(args...);
 	});
@@ -71,7 +79,6 @@ void Session::async_send(const std::string& str, Fun && f, Args && ...args)
 		if (ec)
 		{
 			std::cerr << ec.message() << std::endl;
-			_sock.close();
 			_ec = ec;
 		}
 		f(args...);
@@ -87,7 +94,6 @@ void Session::async_read(Fun && f, Args && ...args)
 		{
 			if (ec.value() != 2)
 				std::cerr << ec.message() << std::endl;
-			_sock.close();
 			_ec = ec;
 		}
 		f(args...);
@@ -100,7 +106,6 @@ void Session::async_readutil(const std::string & delim, Fun && f, Args && ...arg
 		if (ec)
 		{
 			std::cerr << ec.message() << std::endl;
-			_sock.close();
 			_ec = ec;
 		}
 		f(args...);
