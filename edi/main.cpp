@@ -12,7 +12,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include "threadsafe_queue.h"
+#include "syncqueue.hpp"
 
 using namespace boost;
 
@@ -21,7 +21,7 @@ int main()
 	asio::io_service ios;
 	asio::io_service::work w(ios);
 	std::vector<std::thread> tds;
-	std::shared_ptr<threadsafe_queue<std::string>> fileList(new threadsafe_queue<std::string>);
+	std::shared_ptr<SyncQueue<std::string>> fileList(new SyncQueue<std::string>());
 
 	std::ifstream in("list.txt");
 	std::string line;
@@ -33,7 +33,7 @@ int main()
 			if ((pos = line.find('\r')) != line.npos)
 				line.erase(pos, 1);
 			std::string tmp = std::string("/OUT/stockout/" + line);
-			fileList->push(tmp);
+			fileList->Put(std::move(tmp));
 		}
 	}
 	in.close();

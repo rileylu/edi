@@ -4,8 +4,8 @@
 #include <sstream>
 #include <regex>
 #include <fstream>
-#include "threadsafe_queue.h"
 #include <cstdio>
+#include "syncqueue.hpp"
 
 
 using namespace boost;
@@ -46,7 +46,7 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 				else if (res.find("421") == 0)
 				{
 					std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
-					ftpContext->_fileList->push(filename);
+					ftpContext->_fileList->Put(filename);
 					ftpContext->GetCtrlSession().reset();
 					ftpContext->GetDataSession().reset();
 				}
@@ -280,7 +280,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 								std::copy(asio::buffers_begin(cbt), asio::buffers_end(cbt), std::ostream_iterator<char>(of));
 								of.flush();
 								of.close();
-								::fprintf(stdout, "Transfer File: %s completed.", filename.c_str());
+								::fprintf(stdout, "Transfer File: %s completed.\n", filename.c_str());
 							}
 						}
 						else if (ftpContext->GetDataSession()->Err())
@@ -309,10 +309,10 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 								{
 									ChangeStatus(ftpContext, &LoginReadyState::Instance());
 									ftpContext->ReadyForTransfer();
-									if (!ftpContext->_fileList->empty())
+									if (!ftpContext->_fileList->Empty())
 									{
 										std::string fn;
-										ftpContext->_fileList->wait_and_pop(fn);
+										ftpContext->_fileList->Take(fn);
 										ftpContext->DoSendFile(fn);
 									}
 								}
@@ -332,10 +332,10 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 					std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, "no file");
 					ChangeStatus(ftpContext, &LoginReadyState::Instance());
 					ftpContext->ReadyForTransfer();
-					if (!ftpContext->_fileList->empty())
+					if (!ftpContext->_fileList->Empty())
 					{
 						std::string fn;
-						ftpContext->_fileList->wait_and_pop(fn);
+						ftpContext->_fileList->Take(fn);
 						ftpContext->DoSendFile(fn);
 					}
 				}

@@ -1,11 +1,11 @@
 #include "ftpcontext.h"
 #include <boost/asio.hpp>
 #include "state.h"
-#include "threadsafe_queue.h"
+#include "syncqueue.hpp"
 
 using namespace boost;
 FtpContext::FtpContext(asio::io_service& ios, const std::string & ip, unsigned short port, const std::string& user, const std::string& pwd)
-	:_ios(ios), _ip_address(ip), _port(port), _user(user), _pwd(pwd), _fileList(std::make_shared<threadsafe_queue<std::string>>()), _state(&ConnectionClosedState::Instance()), _ctrlSession(nullptr), _dataSession(nullptr), _ready_for_transfer(true)
+	:_ios(ios), _ip_address(ip), _port(port), _user(user), _pwd(pwd), _fileList(new SyncQueue<std::string>), _state(&ConnectionClosedState::Instance()), _ctrlSession(nullptr), _dataSession(nullptr), _ready_for_transfer(true)
 {
 	_ctrlSession = std::make_shared<Session>(ios, ip, port);
 }
@@ -16,11 +16,11 @@ void FtpContext::SendFile(const std::string & fileName)
 	DoSendFile(fileName);
 }
 
-void FtpContext::SendFile(std::shared_ptr<threadsafe_queue<std::string>> fileList)
+void FtpContext::SendFile(std::shared_ptr<SyncQueue<std::string>> fileList)
 {
 	_fileList = fileList;
 	std::string filename;
-	_fileList->wait_and_pop(filename);
+	_fileList->Take(filename);
 	DoSendFile(filename);
 }
 

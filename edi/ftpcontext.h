@@ -8,13 +8,13 @@
 #include <boost/lockfree/queue.hpp>
 
 template<typename T>
-class threadsafe_queue;
+class SyncQueue;
 class State;
 class FtpContext :public std::enable_shared_from_this<FtpContext> {
 public:
 	FtpContext(boost::asio::io_service& ios, const std::string& ip, unsigned short port, const std::string& user, const std::string& pwd);
 	void SendFile(const std::string& fileName);
-	void SendFile(std::shared_ptr<threadsafe_queue<std::string>> fileList);
+	void SendFile(std::shared_ptr<SyncQueue<std::string>> fileList);
 	void RecvFile(const std::string& fileName);
 	void List(const std::string& dir);
 	std::shared_ptr<Session> GetCtrlSession() const {
@@ -70,7 +70,7 @@ private:
 	unsigned short _port;
 	std::string _user;
 	std::string _pwd;
-	std::shared_ptr<threadsafe_queue<std::string>> _fileList;
+	std::shared_ptr<SyncQueue<std::string>> _fileList;
 
 
 	friend class State;
