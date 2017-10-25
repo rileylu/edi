@@ -69,7 +69,7 @@ template<typename Fun, typename ...Args>
 void Session::async_send(const std::string& str, Fun && f, Args && ...args)
 {
 	_request_buf.sputn(str.c_str(), str.size());
-	asio::async_write(_sock, _request_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
+	boost::asio::async_write(_sock, _request_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
 			_ec = ec;
