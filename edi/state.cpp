@@ -309,12 +309,8 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 								{
 									ChangeStatus(ftpContext, &LoginReadyState::Instance());
 									ftpContext->ReadyForTransfer();
-									if (!ftpContext->_fileList->Empty())
-									{
-										std::string fn;
-										ftpContext->_fileList->Take(fn);
-										ftpContext->DoSendFile(fn);
-									}
+									std::string fn;
+									ftpContext->_fileList->Take(fn);
 								}
 								else
 								{
