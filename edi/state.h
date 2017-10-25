@@ -13,6 +13,7 @@ protected:
 	}
 };
 
+
 class ConnectionClosedState :public State {
 public:
 	static ConnectionClosedState& Instance() {
@@ -22,7 +23,6 @@ public:
 	// Inherited via State
 	virtual void DoSendFile(std::shared_ptr<FtpContext> ftpContext, const std::string& filename) override;
 	virtual void DoList(std::shared_ptr<FtpContext> ftpContext, const std::string& dir) override;
-private:
 };
 
 class ConnectionReadyState :public State {

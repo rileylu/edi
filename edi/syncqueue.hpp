@@ -11,14 +11,23 @@ class SyncQueue :boost::noncopyable {
 public:
 	SyncQueue(int maxSize = 50000) :_maxSize(maxSize), _needStop(false)
 	{}
-	void Put(const T& x)
+	void Putback(const T& x)
 	{
-		Add(x);
+		Pushback(x);
 	}
-	void Put(T&& x)
+	void Putback(T&& x)
 	{
-		Add(std::move(x));
+		Pushback(std::move(x));
 	}
+	void PutFront(const T& x)
+	{
+		PushFront(x);
+	}
+	void PutFront(T&& x)
+	{
+		PushFront(std::move(x));
+	}
+
 	void Take(std::list<T>& list)
 	{
 		std::unique_lock<std::mutex> lck(_m);
@@ -74,13 +83,23 @@ private:
 		return !_queue.empty();
 	}
 	template<typename F>
-	void Add(F&& x)
+	void Pushback(F&& x)
 	{
 		std::unique_lock<std::mutex> lck(_m);
 		_notFull.wait(lck, [this] {return _needStop || NotFull(); });
 		if (_needStop)
 			return;
 		_queue.push_back(std::forward<F>(x));
+		_notEmpty.notify_one();
+	}
+	template<typename F>
+	void PushFront(F&& x)
+	{
+		std::unique_lock<std::mutex> lck(_m);
+		_notFull.wait(lck, [this] {return _needStop || NotFull(); });
+		if (_needStop)
+			return;
+		_queue.push_front(std::forward<F>(x));
 		_notEmpty.notify_one();
 	}
 
