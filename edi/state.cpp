@@ -200,13 +200,12 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 							port = std::stoul(std::string(results[1].first, results[1].second));
 							ftpContext->BuildDataSession(port);
 							ftpContext->GetDataSession()->async_connect([ftpContext, filename, this] {
+								ChangeStatus(ftpContext, &ReadyForTransferState::Instance());
+								ftpContext->DoSendFile(filename);
 								if (ftpContext->GetDataSession()->Err())
 								{
 									std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ftpContext->GetDataSession()->Err().value(), ftpContext->GetDataSession()->Err().message().c_str());
-									return;
 								}
-								ChangeStatus(ftpContext, &ReadyForTransferState::Instance());
-								ftpContext->DoSendFile(filename);
 							});
 						}
 						else
@@ -310,6 +309,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 									ftpContext->ReadyForTransfer();
 									std::string fn;
 									ftpContext->_fileList->Take(fn);
+									ftpContext->DoSendFile(fn);
 								}
 								else
 								{
@@ -334,7 +334,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 						ftpContext->DoSendFile(fn);
 					}
 				}
-				else if (res.find("421") == 0)
+				else if (res.find("425") == 0)
 				{
 					std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
 					ftpContext->_fileList->PutFront(filename);

@@ -45,6 +45,11 @@ public:
 	boost::asio::streambuf* ResponseBuf() {
 		return &_response_buf;
 	}
+
+	void Cancel()
+	{
+		_sock.cancel();
+	}
 private:
 	boost::asio::ip::tcp::socket _sock;
 	boost::asio::ip::tcp::endpoint _ep;
