@@ -34,7 +34,7 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 			while (std::getline(is, res))
 			{
 #ifdef _DEBUG
-				std::cout << res << std::endl;
+				fprintf(stdout, "%s", res.c_str());
 #endif
 				if (res[3] == '-')
 					continue;
@@ -46,7 +46,7 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 				else if (res.find("421") == 0)
 				{
 					std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
-					ftpContext->_fileList->Put(filename);
+					ftpContext->_fileList->PutFront(filename);
 					ftpContext->GetCtrlSession().reset();
 					ftpContext->GetDataSession().reset();
 				}
@@ -92,7 +92,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 			if (std::getline(is, res))
 			{
 #ifdef _DEBUG
-				std::cout << res << std::endl;
+				fprintf(stdout, "%s", res.c_str());
 #endif
 				if (res.find("331") == 0)
 				{
@@ -121,7 +121,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 							if (std::getline(is, res))
 							{
 #ifdef _DEBUG
-								std::cout << res << std::endl;
+								fprintf(stdout, "%s", res.c_str());
 #endif
 								if (res.find("230") == 0)
 								{
@@ -186,7 +186,7 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 			if (std::getline(is, res))
 			{
 #ifdef _DEBUG
-				std::cout << res << std::endl;
+				fprintf(stdout, "%s", res.c_str());
 #endif
 				if (res.find("229") == 0)
 				{
@@ -203,7 +203,6 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 								if (ftpContext->GetDataSession()->Err())
 								{
 									std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ftpContext->GetDataSession()->Err().value(), ftpContext->GetDataSession()->Err().message().c_str());
-									ftpContext->DoSendFile(filename);
 									return;
 								}
 								ChangeStatus(ftpContext, &ReadyForTransferState::Instance());
@@ -263,7 +262,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 			if (std::getline(is, res))
 			{
 #ifdef _DEBUG
-				std::cout << res << std::endl;
+				fprintf(stdout, "%s", res.c_str());
 #endif
 				if (res.find("150") == 0)
 				{
@@ -303,7 +302,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 							if (std::getline(is, res))
 							{
 #ifdef _DEBUG
-								std::cout << res << std::endl;
+								fprintf(stdout, "%s", res.c_str());
 #endif
 								if (res.find("226") == 0)
 								{
@@ -334,6 +333,13 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 						ftpContext->_fileList->Take(fn);
 						ftpContext->DoSendFile(fn);
 					}
+				}
+				else if (res.find("421") == 0)
+				{
+					std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
+					ftpContext->_fileList->PutFront(filename);
+					ftpContext->GetCtrlSession().reset();
+					ftpContext->GetDataSession().reset();
 				}
 				else
 				{

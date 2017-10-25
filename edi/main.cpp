@@ -33,7 +33,7 @@ int main()
 			if ((pos = line.find('\r')) != line.npos)
 				line.erase(pos, 1);
 			std::string tmp = std::string("/OUT/stockout/" + line);
-			fileList->Put(std::move(tmp));
+			fileList->Putback(std::move(tmp));
 		}
 	}
 	in.close();
