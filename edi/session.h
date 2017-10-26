@@ -1,15 +1,18 @@
-#pragma once
+﻿#pragma once
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <string>
 
-class Session :boost::noncopyable {
+#define TIMEOUT boost::posix_time::seconds(10)
+class Session :boost::noncopyable, public std::enable_shared_from_this<Session> {
 public:
+
 	Session(boost::asio::io_service &ios,
 		const std::string& raw_ip_address,
 		unsigned short port) :
 		_sock(ios, boost::asio::ip::tcp::v4()),
-		_ep(boost::asio::ip::address::from_string(raw_ip_address), port)
+		_ep(boost::asio::ip::address::from_string(raw_ip_address), port),
+		_deadline(ios)
 	{
 		_sock.set_option(boost::asio::ip::tcp::no_delay(true));
 		_sock.set_option(boost::asio::socket_base::reuse_address(true));
@@ -51,16 +54,28 @@ public:
 		_sock.cancel();
 	}
 private:
+	void check_deadline()
+	{
+		if (_deadline.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+		{
+			_sock.close(_ec);
+			_deadline.expires_at(boost::posix_time::pos_infin);
+		}
+		_deadline.async_wait(std::bind(&Session::check_deadline, shared_from_this()));
+	}
+private:
 	boost::asio::ip::tcp::socket _sock;
 	boost::asio::ip::tcp::endpoint _ep;
 	boost::asio::streambuf _response_buf;
 	boost::asio::streambuf _request_buf;
 	boost::system::error_code _ec;
+	boost::asio::deadline_timer _deadline;
 };
 
 template<typename Fun, typename ...Args>
 void Session::async_connect(Fun &&f, Args&&... args)
 {
+	_deadline.expires_from_now(TIMEOUT);
 	_sock.async_connect(_ep, [this, f, args...](const boost::system::error_code& ec) {
 		if (ec)
 		{
@@ -68,12 +83,14 @@ void Session::async_connect(Fun &&f, Args&&... args)
 		}
 		f(args...);
 	});
+	_deadline.async_wait(std::bind(&Session::check_deadline, shared_from_this()));
 }
 
 template<typename Fun, typename ...Args>
 void Session::async_send(const std::string& str, Fun && f, Args && ...args)
 {
 	_request_buf.sputn(str.c_str(), str.size());
+	_deadline.expires_from_now(TIMEOUT);
 	boost::asio::async_write(_sock, _request_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
@@ -87,6 +104,7 @@ void Session::async_send(const std::string& str, Fun && f, Args && ...args)
 template<typename Fun, typename ...Args>
 void Session::async_read(Fun && f, Args && ...args)
 {
+	_deadline.expires_from_now(TIMEOUT);
 	boost::asio::async_read(_sock, _response_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
@@ -98,6 +116,7 @@ void Session::async_read(Fun && f, Args && ...args)
 template<typename Fun, typename ...Args>
 void Session::async_readutil(const std::string & delim, Fun && f, Args && ...args)
 {
+	_deadline.expires_from_now(TIMEOUT);
 	boost::asio::async_read_until(_sock, _response_buf, delim, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
 		if (ec)
 		{
