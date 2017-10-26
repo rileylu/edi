@@ -2,8 +2,6 @@
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <string>
-#include <mutex>
-
 
 class Session :boost::noncopyable {
 public:
@@ -16,6 +14,8 @@ public:
 		_sock.set_option(boost::asio::ip::tcp::no_delay(true));
 		_sock.set_option(boost::asio::socket_base::reuse_address(true));
 		_sock.set_option(boost::asio::socket_base::linger(true, 0));
+		boost::asio::socket_base::non_blocking_io cmd(true);
+		_sock.io_control(cmd);
 	}
 	~Session()
 	{
