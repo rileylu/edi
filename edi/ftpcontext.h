@@ -25,7 +25,10 @@ public:
 	}
 
 	void BuildDataSession(unsigned short port) {
+		//auto old = _dataSession;
 		_dataSession.reset(new Session(_ios, _ip_address, port));
+		//if(old)
+		//	old->Close();
 	}
 	std::string GetUser() const {
 		return _user;

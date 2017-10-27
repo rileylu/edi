@@ -3,7 +3,7 @@
 #include <boost/noncopyable.hpp>
 #include <string>
 
-#define TIMEOUT boost::posix_time::seconds(10)
+#define TIMEOUT boost::posix_time::seconds(30)
 class Session :boost::noncopyable, public std::enable_shared_from_this<Session> {
 public:
 
@@ -20,9 +20,10 @@ public:
 		boost::asio::socket_base::non_blocking_io cmd(true);
 		_sock.io_control(cmd);
 	}
+
 	~Session()
 	{
-		_sock.shutdown(boost::asio::socket_base::shutdown_both, _ec);
+		_sock.shutdown(_sock.shutdown_both,_ec);
 		_sock.close(_ec);
 	}
 
@@ -51,15 +52,22 @@ public:
 
 	void Cancel()
 	{
-		_sock.cancel();
+		_sock.cancel(_ec);
+	}
+	void Close()
+	{
+		_sock.shutdown(_sock.shutdown_both, _ec);
+		_sock.close(_ec);
 	}
 private:
 	void check_deadline()
 	{
 		if (_deadline.expires_at() <= boost::asio::deadline_timer::traits_type::now())
 		{
+			_sock.shutdown(boost::asio::socket_base::shutdown_both, _ec);
 			_sock.close(_ec);
-			_deadline.expires_at(boost::posix_time::pos_infin);
+			//_deadline.expires_at(boost::posix_time::pos_infin);
+			return;
 		}
 		_deadline.async_wait(std::bind(&Session::check_deadline, shared_from_this()));
 	}

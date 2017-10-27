@@ -33,7 +33,7 @@ void ConnectionClosedState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 			std::string res;
 			while (std::getline(is, res) && res[3] == '-');
 #ifdef _DEBUG
-			fprintf(stdout, "%s", res.c_str());
+			fprintf(stdout, "%s\n", res.c_str());
 #endif
 			if (res.find("220") == 0)
 			{
@@ -88,7 +88,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 			if (std::getline(is, res))
 			{
 #ifdef _DEBUG
-				fprintf(stdout, "%s", res.c_str());
+				fprintf(stdout, "%s\n", res.c_str());
 #endif
 				if (res.find("331") == 0)
 				{
@@ -117,7 +117,7 @@ void ConnectionReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, co
 							if (std::getline(is, res))
 							{
 #ifdef _DEBUG
-								fprintf(stdout, "%s", res.c_str());
+								fprintf(stdout, "%s\n", res.c_str());
 #endif
 								if (res.find("230") == 0)
 								{
@@ -179,7 +179,7 @@ void LoginReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const s
 			if (std::getline(is, res))
 			{
 #ifdef _DEBUG
-				fprintf(stdout, "%s", res.c_str());
+				fprintf(stdout, "%s\n", res.c_str());
 #endif
 				if (res.find("229") == 0)
 				{
@@ -257,7 +257,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 			if (std::getline(is, res))
 			{
 #ifdef _DEBUG
-				fprintf(stdout, "%s", res.c_str());
+				fprintf(stdout, "%s\n", res.c_str());
 #endif
 				if (res.find("150") == 0)
 				{
@@ -297,7 +297,7 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 							if (std::getline(is, res))
 							{
 #ifdef _DEBUG
-								fprintf(stdout, "%s", res.c_str());
+								fprintf(stdout, "%s\n", res.c_str());
 #endif
 								if (res.find("226") == 0)
 								{

@@ -35,7 +35,13 @@ void FtpContext::DoSendFile(const std::string& filename) {
 	_state->DoSendFile(shared_from_this(), filename);
 }
 void FtpContext::ReBuild() {
+	//auto old = _ctrlSession;
 	_ctrlSession.reset(new Session(_ios, _ip_address, _port));
+	//if(old)
+	//	old->Close();
+	//old = _dataSession;
 	_dataSession.reset();
+	//if(old)
+	//	old->Close();
 	ChangeState(&ConnectionClosedState::Instance());
 }
