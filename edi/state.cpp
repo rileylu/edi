@@ -270,67 +270,24 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 							{
 								std::string newFileName = filename;
 								newFileName.erase(0, newFileName.find_last_of('/') + 1);
-								HANDLE hd = ::CreateFile(newFileName.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_NEW, FILE_FLAG_OVERLAPPED, NULL);
+								HANDLE hd = ::CreateFile(newFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_FLAG_OVERLAPPED, NULL);
 								if (hd == INVALID_HANDLE_VALUE)
 								{
 									::fprintf(stdout, "File: %s create failed. Error: %d\n", filename.c_str(), GetLastError());
 									return;
 								}
 								std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(ftpContext->GetIOS(), hd);
-								boost::asio::async_write(*sh, *(ftpContext->GetDataSession()->ResponseBuf()), [hd, newFileName, ftpContext, this, sh](const boost::system::error_code &ec, std::size_t bytes_transferred) {
-									boost::system::error_code e;
-									sh->close(e);
+								std::shared_ptr<std::string> str=std::make_shared<std::string>(asio::buffers_begin(cbt), asio::buffers_end(cbt));
+								boost::asio::async_write(*sh, asio::buffer(*str), [hd, newFileName,filename, ftpContext, this, sh,str](const boost::system::error_code &ec, std::size_t bytes_transferred) {
 									if (ec)
 									{
+										ftpContext->_fileList->PutFront(filename);
 										std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ec.value(), ec.message().c_str());
 										::DeleteFile(newFileName.c_str());
-										ChangeStatus(ftpContext, &LoginReadyState::Instance());
-										ftpContext->DoSendFile(newFileName);
-										return;
 									}
+									boost::system::error_code e;
+									sh->close(e);
 									::fprintf(stdout, "Transfer File: %s completed.\n", newFileName.c_str());
-									ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, newFileName] {
-										if (ftpContext->GetCtrlSession()->Err())
-										{
-											std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ftpContext->GetCtrlSession()->Err().value(), ftpContext->GetCtrlSession()->Err().message().c_str());
-											ftpContext->ReBuild();
-											ftpContext->DoSendFile(newFileName);
-											return;
-										}
-										std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
-										std::string res;
-										if (std::getline(is, res))
-										{
-#ifdef _DEBUG
-											fprintf(stdout, "%s\n", res.c_str());
-#endif
-											if (res.find("226") == 0)
-											{
-												ChangeStatus(ftpContext, &LoginReadyState::Instance());
-												ftpContext->ReadyForTransfer();
-												if (!ftpContext->_fileList->Empty())
-												{
-													std::string fn;
-													ftpContext->_fileList->Take(fn);
-													ftpContext->DoSendFile(fn);
-												}
-											}
-											else
-											{
-												std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
-												ftpContext->ReBuild();
-												ftpContext->DoSendFile(newFileName);
-												return;
-											}
-										}
-										else
-										{
-											std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
-											ftpContext->ReBuild();
-											ftpContext->DoSendFile(newFileName);
-											return;
-										}
-									});
 								});
 							}
 						}
@@ -341,6 +298,48 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 							ftpContext->DoSendFile(filename);
 							return;
 						}
+						ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename] {
+							if (ftpContext->GetCtrlSession()->Err())
+							{
+								std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ftpContext->GetCtrlSession()->Err().value(), ftpContext->GetCtrlSession()->Err().message().c_str());
+								ftpContext->ReBuild();
+								ftpContext->DoSendFile(filename);
+								return;
+							}
+							std::istream is(ftpContext->GetCtrlSession()->ResponseBuf());
+							std::string res;
+							if (std::getline(is, res))
+							{
+#ifdef _DEBUG
+								fprintf(stdout, "%s\n", res.c_str());
+#endif
+								if (res.find("226") == 0)
+								{
+									ChangeStatus(ftpContext, &LoginReadyState::Instance());
+									ftpContext->ReadyForTransfer();
+									if (!ftpContext->_fileList->Empty())
+									{
+										std::string fn;
+										ftpContext->_fileList->Take(fn);
+										ftpContext->DoSendFile(fn);
+									}
+								}
+								else
+								{
+									std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
+									ftpContext->ReBuild();
+									ftpContext->DoSendFile(filename);
+									return;
+								}
+							}
+							else
+							{
+								std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
+								ftpContext->ReBuild();
+								ftpContext->DoSendFile(filename);
+								return;
+							}
+						});
 					});
 				}
 				else if (res.find("550") == 0)
