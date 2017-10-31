@@ -278,13 +278,16 @@ void ReadyForTransferState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, c
 								}
 								std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(ftpContext->GetIOS(), hd);
 								boost::asio::async_write(*sh, *(ftpContext->GetDataSession()->ResponseBuf()), [hd, newFileName, ftpContext, this, sh](const boost::system::error_code &ec, std::size_t bytes_transferred) {
+									boost::system::error_code e;
+									sh->close(e);
 									if (ec)
 									{
 										std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ec.value(), ec.message().c_str());
 										::DeleteFile(newFileName.c_str());
+										ChangeStatus(ftpContext, &LoginReadyState::Instance());
+										ftpContext->DoSendFile(newFileName);
+										return;
 									}
-									boost::system::error_code e;
-									sh->close(e);
 									::fprintf(stdout, "Transfer File: %s completed.\n", newFileName.c_str());
 									ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, newFileName] {
 										if (ftpContext->GetCtrlSession()->Err())
