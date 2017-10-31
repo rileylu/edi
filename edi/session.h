@@ -3,7 +3,7 @@
 #include <boost/noncopyable.hpp>
 #include <string>
 
-#define TIMEOUT boost::posix_time::seconds(120)
+#define TIMEOUT boost::posix_time::seconds(30)
 class Session :boost::noncopyable, public std::enable_shared_from_this<Session> {
 public:
 
