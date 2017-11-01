@@ -16,6 +16,7 @@ public:
 	void SendFile(const std::string& fileName);
 	void SendFile(std::shared_ptr<SyncQueue<std::string>> fileList);
 	void RecvFile(const std::string& fileName);
+	void RecvFile(std::shared_ptr<SyncQueue<std::string>> fileList);
 	void List(const std::string& dir);
 	std::shared_ptr<Session> GetCtrlSession() const {
 		return _ctrlSession;
@@ -47,10 +48,10 @@ public:
 	}
 private:
 	void ReBuild();
-	void ChangeState(State* s) {
-		_state = s;
+	void ChangeStatus(State* state)
+	{
+		_state = state;
 	}
-	void DoSendFile(const std::string& filename);
 	bool WaitForTransfer() {
 		std::unique_lock<std::mutex> lck(_m);
 		bool result = _cv.wait_for(lck, std::chrono::seconds(1), [this] {
@@ -76,10 +77,7 @@ private:
 
 
 	friend class State;
-	friend class ConnectionClosedState;
-	friend class ConnectionReadyState;
-	friend class LoginReadyState;
-	friend class ReadyForTransferState;
+	friend class EPSVReadyState;
 	State* _state;
 	std::shared_ptr<Session> _ctrlSession;
 	std::shared_ptr<Session> _dataSession;

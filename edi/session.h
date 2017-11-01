@@ -6,12 +6,14 @@
 #define TIMEOUT boost::posix_time::seconds(30)
 class Session :boost::noncopyable, public std::enable_shared_from_this<Session> {
 public:
-
+	using Callback = std::function<void()>;
 	Session(boost::asio::io_service &ios,
 		const std::string& raw_ip_address,
 		unsigned short port) :
 		_sock(ios, boost::asio::ip::tcp::v4()),
 		_ep(boost::asio::ip::address::from_string(raw_ip_address), port),
+		_request_buf(std::make_shared<boost::asio::streambuf>()),
+		_response_buf(std::make_shared<boost::asio::streambuf>()),
 		_deadline(ios)
 	{
 		_sock.set_option(boost::asio::ip::tcp::no_delay(true));
@@ -20,28 +22,34 @@ public:
 		boost::asio::socket_base::non_blocking_io cmd(true);
 		_sock.io_control(cmd);
 	}
+	~Session()
+	{
+		Close();
+		_response_buf.reset();
+		_request_buf.reset();
+	}
 
-	template<typename Fun, typename...Args>
-	void async_connect(Fun&& f, Args&&... args);
+	void async_connect(const Callback &callback);
 
-	template<typename Fun, typename... Args>
-	void async_send(const std::string& str, Fun&& f, Args&&... args);
+	void async_send(const std::string& str, const Callback &callback);
 
-	template<typename Fun, typename... Args>
-	void async_read(Fun&& f, Args&&... args);
+	void async_send(const Callback &callback);
 
-	template<typename Fun, typename... Args>
-	void async_readutil(const std::string& delim, Fun&& fun, Args&&... args);
+	void async_read(const Callback &callback);
+	
+	void async_read(boost::asio::windows::stream_handle &hd, Callback &callback);
+
+	void async_readutil(const std::string& delim, const Callback &callback);
 
 	boost::system::error_code Err() const {
 		return _ec;
 	}
 
-	boost::asio::streambuf* RequestBuf() {
-		return &_request_buf;
+	std::shared_ptr<boost::asio::streambuf> RequestBuf() const {
+		return _request_buf;
 	}
-	boost::asio::streambuf* ResponseBuf() {
-		return &_response_buf;
+	std::shared_ptr<boost::asio::streambuf> ResponseBuf() const {
+		return _response_buf;
 	}
 
 	void Cancel()
@@ -67,63 +75,8 @@ private:
 private:
 	boost::asio::ip::tcp::socket _sock;
 	boost::asio::ip::tcp::endpoint _ep;
-	boost::asio::streambuf _response_buf;
-	boost::asio::streambuf _request_buf;
+	std::shared_ptr<boost::asio::streambuf> _response_buf;
+	std::shared_ptr<boost::asio::streambuf> _request_buf;
 	boost::system::error_code _ec;
 	boost::asio::deadline_timer _deadline;
 };
-
-template<typename Fun, typename ...Args>
-void Session::async_connect(Fun &&f, Args&&... args)
-{
-	_deadline.expires_from_now(TIMEOUT);
-	_sock.async_connect(_ep, [this, f, args...](const boost::system::error_code& ec) {
-		if (ec)
-		{
-			_ec = ec;
-		}
-		f(args...);
-	});
-	_deadline.async_wait(std::bind(&Session::check_deadline, shared_from_this()));
-}
-
-template<typename Fun, typename ...Args>
-void Session::async_send(const std::string& str, Fun && f, Args && ...args)
-{
-	_request_buf.sputn(str.c_str(), str.size());
-	_deadline.expires_from_now(TIMEOUT);
-	boost::asio::async_write(_sock, _request_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
-		if (ec)
-		{
-			_ec = ec;
-		}
-		f(args...);
-	});
-}
-
-
-template<typename Fun, typename ...Args>
-void Session::async_read(Fun && f, Args && ...args)
-{
-	_deadline.expires_from_now(TIMEOUT);
-	boost::asio::async_read(_sock, _response_buf, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
-		if (ec)
-		{
-			_ec = ec;
-		}
-		f(args...);
-	});
-}
-template<typename Fun, typename ...Args>
-void Session::async_readutil(const std::string & delim, Fun && f, Args && ...args)
-{
-	_deadline.expires_from_now(TIMEOUT);
-	boost::asio::async_read_until(_sock, _response_buf, delim, [this, f, args...](const boost::system::error_code& ec, std::size_t bytes_transferred) {
-		if (ec)
-		{
-			_ec = ec;
-		}
-		f(args...);
-	});
-}
-
