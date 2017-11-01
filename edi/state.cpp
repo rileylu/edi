@@ -338,7 +338,7 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 									if (std::getline(is, res))
 									{
 #ifdef _DEBUG
-											fprintf(stdout, "%s\n", res.c_str());
+										fprintf(stdout, "%s\n", res.c_str());
 #endif
 										if (res.find("226") == 0)
 										{
@@ -406,56 +406,126 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 
 void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
 {
-	std::string cmd;
-	cmd += "STOR ";
-	cmd += filename;
-	cmd += "\r\n";
-	ftpContext->GetCtrlSession()->async_send(cmd, [ftpContext,filename,this]
+	std::string fn = filename;
+	fn.erase(0, fn.find_last_of('/') + 1);
+	HANDLE hd = ::CreateFile(fn.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	if (hd == INVALID_HANDLE_VALUE)
 	{
-		if (ftpContext->GetCtrlSession()->Err())
-		{
-			std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ftpContext->GetCtrlSession()->Err().value(),
-			             ftpContext->GetCtrlSession()->Err().message().c_str());
-			ftpContext->ReBuild();
-			connect(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
-			return;
-		}
-		std::string fn = filename;
-		fn.erase(0, fn.find_last_of('/') + 1);
-		HANDLE hd = ::CreateFile(fn.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-		if (hd == INVALID_HANDLE_VALUE)
-		{
-			::fprintf(stdout, "File: %s open failed. Error: %d\n", filename.c_str(), GetLastError());
-			ftpContext->_fileList->Take(fn);
-			epsv(ftpContext, fn, std::bind(&State::stor, this, ftpContext, fn));
-			return;
-		}
-		std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(
-			ftpContext->GetIOS(), hd);
-		ftpContext->GetDataSession()->async_read(sh, [ftpContext,filename,this,sh]
+		::fprintf(stdout, "File: %s open failed. Error: %d\n", filename.c_str(), GetLastError());
+		ftpContext->_fileList->Take(fn);
+		epsv(ftpContext, fn, std::bind(&State::stor, this, ftpContext, fn));
+		return;
+	}
+	auto fs = ::GetFileSize(hd, NULL);
+	std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(
+		ftpContext->GetIOS(), hd);
+	std::shared_ptr<boost::asio::streambuf> buf = std::make_shared<boost::asio::streambuf>(fs);
+	boost::asio::async_read(
+		*sh, *buf, [ftpContext,filename,this,sh,fs,buf](const boost::system::error_code& ec,std::size_t bytes_transferred) mutable
 		{
 			sh->close();
-			if (ftpContext->GetDataSession()->Err().value() == 2)
+			ftpContext->GetDataSession()->RequestBuf()=buf;
+			if (fs == bytes_transferred)
 			{
-				ftpContext->GetDataSession()->async_send([ftpContext, filename, this] {
-					if(ftpContext->GetDataSession()->Err())
+				std::string cmd;
+				cmd += "STOR ";
+				cmd += filename;
+				cmd += "\r\n";
+				ftpContext->GetCtrlSession()->async_send(cmd, [ftpContext,filename,this]
+				{
+					if (ftpContext->GetCtrlSession()->Err())
 					{
+						std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__,
+						             ftpContext->GetCtrlSession()->Err().value(),
+						             ftpContext->GetCtrlSession()->Err().message().c_str());
+						ftpContext->ReBuild();
+						connect(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
 						return;
 					}
-
+					ftpContext->GetCtrlSession()->async_readutil("\r\n", [ftpContext,this,filename]
+					{
+						if (ftpContext->GetCtrlSession()->Err())
+						{
+							return;
+						}
+						std::istream is(ftpContext->GetCtrlSession()->ResponseBuf().get());
+						std::string res;
+						if (std::getline(is, res))
+						{
+							if (res.find("150") == 0)
+							{
+								ftpContext->GetDataSession()->async_send([ftpContext, filename, this]
+								{
+									if (ftpContext->GetDataSession()->Err())
+									{
+										return;
+									}
+									ftpContext->GetDataSession()->Close();
+								});
+								ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename]
+								{
+									if (ftpContext->GetCtrlSession()->Err())
+									{
+										std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__,
+										             ftpContext->GetCtrlSession()->Err().value(),
+										             ftpContext->GetCtrlSession()->Err().message().c_str());
+										ftpContext->ReBuild();
+										connect(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
+										return;
+									}
+									std::istream is(ftpContext->GetCtrlSession()->ResponseBuf().get());
+									std::string res;
+									if (std::getline(is, res))
+									{
+#ifdef _DEBUG
+										fprintf(stdout, "%s\n", res.c_str());
+#endif
+										if (res.find("226") == 0)
+										{
+											ftpContext->ReadyForTransfer();
+											if (!ftpContext->_fileList->Empty())
+											{
+												std::string fn;
+												ftpContext->_fileList->Take(fn);
+												epsv(ftpContext, fn, std::bind(&State::stor, this, ftpContext, fn));
+											}
+										}
+										else
+										{
+											std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
+											epsv(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
+											return;
+										}
+									}
+									else
+									{
+										std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
+										epsv(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
+										return;
+									}
+								});
+							}
+							else
+							{
+							}
+						}
+						else
+						{
+						}
+					});
 				});
 			}
-			else if(ftpContext->GetDataSession()->Err())
+			else if (ftpContext->GetDataSession()->Err())
 			{
 				return;
 			}
 		});
-	});
 }
 
 void State::nlst(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
 {
 }
+
 
 void EPSVReadyState::DoRecvFile(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
 {

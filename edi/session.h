@@ -45,10 +45,10 @@ public:
 		return _ec;
 	}
 
-	std::shared_ptr<boost::asio::streambuf> RequestBuf() const {
+	std::shared_ptr<boost::asio::streambuf>& RequestBuf(){
 		return _request_buf;
 	}
-	std::shared_ptr<boost::asio::streambuf> ResponseBuf() const {
+	std::shared_ptr<boost::asio::streambuf>& ResponseBuf(){
 		return _response_buf;
 	}
 
