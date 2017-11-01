@@ -50,10 +50,10 @@ void Session::async_read(const Callback &callback)
 		callback();
 	});
 }
-void Session::async_read(boost::asio::windows::stream_handle & hd, Callback & callback)
+void Session::async_read(std::shared_ptr<boost::asio::windows::stream_handle> hd, const Callback & callback)
 {
 	_deadline.expires_from_now(TIMEOUT);
-	boost::asio::async_read(hd, *_request_buf, [this, callback](const boost::system::error_code& ec, std::size_t) {
+	boost::asio::async_read(*hd, *_request_buf, [this, callback](const boost::system::error_code& ec, std::size_t) {
 		if (ec)
 		{
 			_ec = ec;

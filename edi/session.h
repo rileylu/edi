@@ -37,7 +37,7 @@ public:
 
 	void async_read(const Callback &callback);
 	
-	void async_read(boost::asio::windows::stream_handle &hd, Callback &callback);
+	void async_read(std::shared_ptr<boost::asio::windows::stream_handle> hd, const Callback &callback);
 
 	void async_readutil(const std::string& delim, const Callback &callback);
 
@@ -59,6 +59,8 @@ public:
 	}
 	void Close()
 	{
+		_response_buf.reset();
+		_request_buf.reset();
 		_sock.shutdown(_sock.shutdown_both, _ec);
 		_sock.close(_ec);
 	}
