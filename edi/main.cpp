@@ -32,7 +32,7 @@ int main()
 			std::size_t pos;
 			if ((pos = line.find('\r')) != line.npos)
 				line.erase(pos, 1);
-			std::string tmp = std::string("/OUT/stockout/" + line);
+			std::string tmp = std::string("/OUT/test/" + line);
 			fileList->Putback(std::move(tmp));
 		}
 	}
@@ -47,7 +47,7 @@ int main()
 	}
 
 	std::vector<std::shared_ptr<FtpContext>> ftpContexts;
-	for (int i = 0; i < 50; ++i)
+	for (int i = 0; i < 1; ++i)
 	{
 		//ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "124.207.27.34", 21, "gzftpqas01", "001testgz"));
 		ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "127.0.0.1", 21, "lmz", "gklmz2013"));
@@ -56,6 +56,7 @@ int main()
 	for (auto& p : ftpContexts)
 	{
 		p->SendFile(fileList);
+		//p->RecvFile(fileList);
 	}
 	for (auto &p : tds)
 	{

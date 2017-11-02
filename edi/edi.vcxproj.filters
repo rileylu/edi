@@ -24,15 +24,12 @@
     <ClCompile Include="state.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="session.cpp">
+    <ClCompile Include="ftpsession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ftpcontext.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="session.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="state.h">
@@ -42,6 +39,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="syncqueue.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ftpsession.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="session.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
