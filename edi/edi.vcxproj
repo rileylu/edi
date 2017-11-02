@@ -161,7 +161,6 @@
   <ItemGroup>
     <ClInclude Include="ftpcontext.h" />
     <ClInclude Include="ftpsession.h" />
-    <ClInclude Include="session.h" />
     <ClInclude Include="state.h" />
     <ClInclude Include="syncqueue.hpp" />
     <ClInclude Include="threadsafe_queue.h" />

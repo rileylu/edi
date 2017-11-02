@@ -41,13 +41,14 @@ int main()
 	int concurrent = std::thread::hardware_concurrency() * 2;
 	for (int i = 0; i < concurrent; ++i)
 	{
-		tds.emplace_back([&ios] {
+		tds.emplace_back([&ios]
+		{
 			ios.run();
 		});
 	}
 
 	std::vector<std::shared_ptr<FtpContext>> ftpContexts;
-	for (int i = 0; i < 1; ++i)
+	for (int i = 0; i < 50; ++i)
 	{
 		//ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "124.207.27.34", 21, "gzftpqas01", "001testgz"));
 		ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "127.0.0.1", 21, "lmz", "gklmz2013"));
@@ -58,7 +59,7 @@ int main()
 		p->SendFile(fileList);
 		//p->RecvFile(fileList);
 	}
-	for (auto &p : tds)
+	for (auto& p : tds)
 	{
 		if (p.joinable())
 			p.join();

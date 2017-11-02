@@ -315,10 +315,10 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 	auto fs = ::GetFileSize(hd, NULL);
 	std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(
 		ftpContext->GetIOS(), hd);
-	std::shared_ptr<boost::asio::streambuf> buf = std::make_shared<boost::asio::streambuf>();
-	buf->prepare(fs);
+	//std::shared_ptr<boost::asio::streambuf> buf = std::make_shared<boost::asio::streambuf>();
+	std::shared_ptr<std::vector<char>> buf=std::make_shared<std::vector<char>>(fs);
 	boost::asio::async_read(
-		*sh, *buf, [ftpContext,filename,this,sh,fs,buf](const boost::system::error_code& ec,
+		*sh, boost::asio::buffer(*buf), [ftpContext,filename,this,sh,fs,buf](const boost::system::error_code& ec,
 		                                                std::size_t bytes_transferred) mutable
 		{
 			sh->close();
@@ -339,7 +339,7 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 							if (res.find("150") == 0)
 							{
 								ftpContext->GetDataSession()->async_send(
-									buf, [ftpContext, filename, this,buf](std::size_t bytes_transferred) mutable
+									std::string(buf->cbegin(),buf->cend()), [ftpContext, filename, this,buf](std::size_t bytes_transferred) mutable
 									{
 										buf.reset();
 										ftpContext->GetDataSession()->Close();

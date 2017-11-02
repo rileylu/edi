@@ -18,9 +18,10 @@ void FtpSession::async_connect(const PositiveCallback& callback, const NegitiveC
 
 void FtpSession::async_send(const std::string& str, const PositiveCallback& callback, const NegitiveCallback& err)
 {
+	std::shared_ptr<std::string> s = std::make_shared<std::string>(str);
 	_deadline.expires_from_now(TIMEOUT);
-	boost::asio::async_write(_sock, boost::asio::buffer(str),
-	                         [this, callback,err](const boost::system::error_code& ec, std::size_t bytes_transferred)
+	boost::asio::async_write(_sock, boost::asio::buffer(*s),
+	                         [this,s, callback,err](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	                         {
 		                         if (ec)
 		                         {
