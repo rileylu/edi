@@ -15,14 +15,13 @@ public:
 	           const std::string& raw_ip_address,
 	           unsigned short port) :
 		_sock(ios, boost::asio::ip::tcp::v4()),
+		_file(ios),
 		_ep(boost::asio::ip::address::from_string(raw_ip_address), port),
 		_buf(std::make_shared<boost::asio::streambuf>()),
 		_deadline(ios)
 	{
-		_sock.set_option(boost::asio::ip::tcp::no_delay(true));
 		_sock.set_option(boost::asio::socket_base::reuse_address(true));
 		_sock.set_option(boost::asio::socket_base::linger(true, 0));
-		_sock.set_option(boost::asio::socket_base::keep_alive(true));
 		boost::asio::socket_base::non_blocking_io cmd(true);
 		_sock.io_control(cmd);
 	}
@@ -48,6 +47,9 @@ public:
 
 	void async_readutil(const std::string& delim, const PositiveCallback& callback, const NegitiveCallback& err);
 
+	template <typename Handler>
+	void transmit_file(const std::string& fn, Handler handler);
+
 	boost::system::error_code Err() const
 	{
 		return _ec;
@@ -69,6 +71,7 @@ public:
 		_buf.reset();
 		_sock.shutdown(_sock.shutdown_both, _ec);
 		_sock.close(_ec);
+		_file.close(_ec);
 	}
 
 private:
@@ -84,8 +87,33 @@ private:
 
 private:
 	boost::asio::ip::tcp::socket _sock;
+	boost::asio::windows::random_access_handle _file;
 	boost::asio::ip::tcp::endpoint _ep;
 	std::shared_ptr<boost::asio::streambuf> _buf;
 	boost::system::error_code _ec;
 	boost::asio::deadline_timer _deadline;
 };
+
+template <typename Handler>
+void FtpSession::transmit_file(const std::string& fn, Handler handler)
+{
+	boost::system::error_code ec;
+	_file.assign(::CreateFile(fn.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+	                          0), ec);
+	if (_file.is_open())
+	{
+		_deadline.expires_from_now(TIMEOUT);
+		boost::asio::windows::overlapped_ptr overlapped(_sock.get_io_service(), handler);
+		BOOL ok = ::TransmitFile(_sock.native(), _file.native(), 0, 0, overlapped.get(), 0, 0);
+		DWORD last_error = ::GetLastError();
+		if (!ok && last_error != ERROR_IO_PENDING)
+		{
+			boost::system::error_code ec(last_error, boost::asio::error::get_system_category());
+			overlapped.complete(ec, 0);
+		}
+		else
+		{
+			overlapped.release();
+		}
+	}
+}

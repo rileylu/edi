@@ -70,7 +70,6 @@ void FtpSession::async_read(const PositiveCallback& callback, const NegitiveCall
 void FtpSession::async_readutil(const std::string& delim, const PositiveCallback& callback, const NegitiveCallback& err)
 {
 	_deadline.expires_from_now(TIMEOUT);
-
 	boost::asio::async_read_until(_sock, *_buf, delim,
 	                              [this, callback,err](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	                              {
