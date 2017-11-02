@@ -29,7 +29,6 @@ public:
 	~FtpSession()
 	{
 		Close();
-		_buf.reset();
 	}
 
 	void Timeout()
