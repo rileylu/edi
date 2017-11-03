@@ -168,6 +168,44 @@ void State::epsv(std::shared_ptr<FtpContext> ftpContext, std::string filename, s
 
 void State::retr(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 {
+	ftpContext->GetDataSession()->async_read([this, filename, ftpContext](std::size_t bytes_transferred)
+	{
+	}, [ftpContext,filename,this]
+	{
+		if (ftpContext->GetDataSession()->Err().value() == 2)
+		{
+			std::string newFileName = filename;
+			newFileName.erase(0, newFileName.find_last_of('/') + 1);
+			HANDLE hd = ::CreateFile(newFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_FLAG_OVERLAPPED, NULL);
+			if (hd == INVALID_HANDLE_VALUE)
+			{
+				::fprintf(stdout, "File: %s create failed. Error: %d\n", filename.c_str(), GetLastError());
+				return;
+			}
+			std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(
+				ftpContext->GetIOS(), hd);
+			boost::asio::async_write(*sh, *ftpContext->GetDataSession()->RecvBuf(),
+			                         [newFileName, filename, ftpContext, this, sh](
+			                         const boost::system::error_code& ec, std::size_t bytes_transferred)mutable
+			                         {
+				                         boost::system::error_code e;
+				                         sh->close(e);
+				                         sh.reset();
+				                         ftpContext->GetDataSession()->Close();
+				                         ftpContext->GetDataSession().reset();
+				                         if (ec)
+				                         {
+					                         ftpContext->_fileList->PutFront(filename);
+					                         std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ec.value(),
+					                                      ec.message().c_str());
+					                         ::DeleteFile(newFileName.c_str());
+					                         ftpContext->_fileList->PutFront(filename);
+					                         return;
+				                         }
+				                         ::fprintf(stdout, "Transfer File: %s completed.\n", newFileName.c_str());
+			                         });
+		}
+	});
 	std::string cmd = "RETR ";
 	cmd += filename;
 	cmd += "\r\n";
@@ -184,44 +222,6 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 #endif
 				if (res.find("150") == 0)
 				{
-					ftpContext->GetDataSession()->async_read([this, filename, ftpContext](std::size_t bytes_transferred)
-					{
-					}, [ftpContext,filename,this]
-					{
-						if (ftpContext->GetDataSession()->Err().value() == 2)
-						{
-							std::string newFileName = filename;
-							newFileName.erase(0, newFileName.find_last_of('/') + 1);
-							HANDLE hd = ::CreateFile(newFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_FLAG_OVERLAPPED, NULL);
-							if (hd == INVALID_HANDLE_VALUE)
-							{
-								::fprintf(stdout, "File: %s create failed. Error: %d\n", filename.c_str(), GetLastError());
-								return;
-							}
-							std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(
-								ftpContext->GetIOS(), hd);
-							boost::asio::async_write(*sh, *ftpContext->GetDataSession()->RecvBuf(),
-							                         [newFileName, filename, ftpContext, this, sh](
-							                         const boost::system::error_code& ec, std::size_t bytes_transferred)mutable
-							                         {
-								                         boost::system::error_code e;
-								                         sh->close(e);
-								                         sh.reset();
-								                         ftpContext->GetDataSession()->Close();
-								                         ftpContext->GetDataSession().reset();
-								                         if (ec)
-								                         {
-									                         ftpContext->_fileList->PutFront(filename);
-									                         std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ec.value(),
-									                                      ec.message().c_str());
-									                         ::DeleteFile(newFileName.c_str());
-									                         ftpContext->_fileList->PutFront(filename);
-									                         return;
-								                         }
-								                         ::fprintf(stdout, "Transfer File: %s completed.\n", newFileName.c_str());
-							                         });
-						}
-					});
 					ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename](std::size_t bytes_transferred)
 					{
 						std::istream is(ftpContext->GetCtrlSession()->RecvBuf().get());
