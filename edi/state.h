@@ -47,23 +47,25 @@ protected:
 
 	void ctrl_err(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
 	{
-		std::fprintf(stderr, "ErrorCode: %d Message: %s\n", ftpContext->GetCtrlSession()->Err().value(),
+		std::fprintf(stderr, "ErrorCode: %d Message: %s\nRebuilding...\n", ftpContext->GetCtrlSession()->Err().value(),
 		             ftpContext->GetCtrlSession()->Err().message().c_str());
-		ftpContext->ReBuild();
-		connect(ftpContext, filename, fun);
+		ftpContext->ReBuild([this,ftpContext,filename,fun]
+		{
+			std::fprintf(stderr, "Connecting...\n");
+			connect(ftpContext, filename, fun);
+		});
 	}
 
 	void data_err(std::shared_ptr<FtpContext> ftpContext)
 	{
 		std::fprintf(stderr, "ErrorCode: %d Message: %s\n", ftpContext->GetDataSession()->Err().value(),
 		             ftpContext->GetDataSession()->Err().message().c_str());
-		if(ftpContext->GetDataSession())
+		if (ftpContext->GetDataSession())
 		{
 			ftpContext->GetDataSession()->Close();
 			ftpContext->GetDataSession().reset();
 		}
 	}
-
 };
 
 class EPSVReadyState : public State

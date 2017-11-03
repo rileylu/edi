@@ -36,6 +36,11 @@ public:
 		_deadline.cancel(_ec);
 	}
 
+	boost::asio::deadline_timer &Timer()
+	{
+		return _deadline;
+	}
+
 	void async_connect(const PositiveCallback& callback, const NegitiveCallback& err);
 
 	void async_send(const std::string& str, const PositiveCallback& callback, const NegitiveCallback& err);

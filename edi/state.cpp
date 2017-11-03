@@ -26,10 +26,7 @@ void State::connect(std::shared_ptr<FtpContext> ftpContext, const std::string& f
 			}
 			else if (res.find("421") == 0)
 			{
-				std::fprintf(stderr, "Line: %d Message: %s\n", __LINE__, res.c_str());
-				ftpContext->_fileList->PutFront(filename);
-				ftpContext->GetCtrlSession().reset();
-				ftpContext->GetDataSession().reset();
+				ctrl_err(ftpContext, filename, fun);
 			}
 			else
 			{
