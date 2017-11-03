@@ -62,6 +62,10 @@ public:
 		return _rep;
 	}
 
+	void NoWait()
+	{
+		_deadline.expires_at(boost::posix_time::pos_infin);
+	}
 	void Cancel()
 	{
 		if (_sock.is_open())
@@ -81,10 +85,10 @@ private:
 	{
 		if (_deadline.expires_at() <= boost::asio::deadline_timer::traits_type::now())
 		{
-			Close();
-			return;
+			_sock.close(_ec);
+			NoWait();
 		}
-		_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this(), std::placeholders::_1));
+		//_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this(), std::placeholders::_1));
 	}
 
 private:
@@ -92,6 +96,7 @@ private:
 	boost::asio::windows::random_access_handle _file;
 	boost::asio::ip::tcp::endpoint _ep;
 	std::shared_ptr<boost::asio::streambuf> _rep;
+	std::string _req;
 	boost::system::error_code _ec;
 	boost::asio::deadline_timer _deadline;
 };
