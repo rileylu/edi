@@ -82,7 +82,6 @@ private:
 	template <typename Fun>
 	void ReBuild(Fun&& fun)
 	{
-		_ctrlSession->Timer().expires_from_now(boost::posix_time::seconds(30));
 		_ctrlSession->Close();
 		_ctrlSession.reset(new FtpSession(_ios, _ip_address, _port));
 		if (_dataSession)
@@ -90,6 +89,7 @@ private:
 			_dataSession->Close();
 			_dataSession.reset();
 		}
+		_ctrlSession->Timer().expires_from_now(boost::posix_time::seconds(30));
 		ChangeStatus(&State::Instance());
 		_ctrlSession->Timer().async_wait([fun](const boost::system::error_code& )
 		{
@@ -122,6 +122,7 @@ private:
 	}
 
 private:
+
 	boost::asio::io_service& _ios;
 	std::string _ip_address;
 	unsigned short _port;
@@ -139,4 +140,5 @@ private:
 	std::mutex _m;
 	bool _ready_for_transfer;
 	std::condition_variable _cv;
+
 };
