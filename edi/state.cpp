@@ -332,7 +332,7 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 							ftpContext->GetDataSession().reset();
 							if (ec)
 							{
-								ftpContext->GetDataSession()->Timeout();
+								ftpContext->GetCtrlSession()->Timeout();
 								return;
 							}
 							ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename](std::size_t bytes_transferred)
