@@ -250,8 +250,7 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 											}
 											else
 											{
-												ftpContext->GetCtrlSession()->Close();
-												ftpContext->GetDataSession()->Close();
+												ftpContext->Close();
 											}
 										}
 										else
@@ -355,8 +354,7 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 										}
 										else
 										{
-											ftpContext->GetCtrlSession()->Close();
-											ftpContext->GetDataSession()->Close();
+											ftpContext->Close();
 										}
 									}
 									else
@@ -399,17 +397,19 @@ void State::nlst(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 
 void State::ctrl_err(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun)
 {
-	std::fprintf(stderr, "Rebuilding...\n");
+	std::fprintf(stderr, "Rebuild in 30 secs...\n");
 	ftpContext->_fileList->PutFront(filename);
 	ftpContext->ReBuild([this,ftpContext,fun]
 	{
-		std::string fn;
-		if(!ftpContext->_fileList->Empty())
+		if (!ftpContext->_fileList->Empty())
 		{
+			std::string fn;
 			std::fprintf(stderr, "Connecting...\n");
 			ftpContext->_fileList->Take(fn);
 			connect(ftpContext, fn, fun);
 		}
+		else
+			ftpContext->Close();
 	});
 }
 

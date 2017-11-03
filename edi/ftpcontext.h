@@ -63,14 +63,28 @@ public:
 	{
 		return _ios;
 	}
+	void Close() 
+	{
+		if (_ctrlSession)
+		{
+			_ctrlSession->Close();
+			_ctrlSession.reset();
+		}
+		if (_dataSession)
+		{
+			_dataSession->Close();
+			_dataSession.reset();
+			
+		}
+	}
 
 private:
 	template <typename Fun>
 	void ReBuild(Fun&& fun)
 	{
+		_ctrlSession->Timer().expires_from_now(boost::posix_time::seconds(30));
 		_ctrlSession->Close();
 		_ctrlSession.reset(new FtpSession(_ios, _ip_address, _port));
-		_ctrlSession->Timer().expires_from_now(boost::posix_time::seconds(30));
 		if (_dataSession)
 		{
 			_dataSession->Close();
