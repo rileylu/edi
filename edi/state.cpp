@@ -308,6 +308,30 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 
 void State::stor(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 {
+	std::string fn = filename;
+	fn.erase(0, fn.find_last_of('/') + 1);
+	if (!ftpContext->GetDataSession()->transmit_file(
+		fn, [this,ftpContext,filename](const boost::system::error_code& ec,std::size_t bytes_transferred)
+		{
+			ftpContext->GetDataSession()->Close();
+			ftpContext->GetDataSession().reset();
+			if (ec)
+			{
+				ftpContext->GetCtrlSession()->Timeout();
+				return;
+			}
+		}))
+	{
+		if (!ftpContext->_fileList->Empty())
+		{
+			std::string fn;
+			ftpContext->_fileList->Take(fn);
+			epsv(ftpContext, fn, std::bind(&State::stor, this, ftpContext, fn));
+		}
+		else
+			ftpContext->Close();
+		return;
+	}
 	std::string cmd;
 	cmd += "STOR ";
 	cmd += filename;
@@ -322,55 +346,42 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 			{
 				if (res.find("150") == 0)
 				{
-					std::string fn = filename;
-					fn.erase(0, fn.find_last_of('/') + 1);
-					ftpContext->GetDataSession()->transmit_file(
-						fn, [this,ftpContext,filename](const boost::system::error_code& ec,std::size_t bytes_transferred)
+					ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename](std::size_t bytes_transferred)
+					{
+						std::istream is(ftpContext->GetCtrlSession()->RecvBuf().get());
+						std::string res;
+						if (std::getline(is, res))
 						{
-							ftpContext->GetDataSession()->Close();
-							ftpContext->GetDataSession().reset();
-							if (ec)
-							{
-								ftpContext->GetCtrlSession()->Timeout();
-								return;
-							}
-							ftpContext->GetCtrlSession()->async_readutil("\r\n", [this, ftpContext, filename](std::size_t bytes_transferred)
-							{
-								std::istream is(ftpContext->GetCtrlSession()->RecvBuf().get());
-								std::string res;
-								if (std::getline(is, res))
-								{
 #ifdef _DEBUG
 									fprintf(stdout, "%s\n", res.c_str());
 #endif
-									if (res.find("226") == 0)
-									{
-										ftpContext->ReadyForTransfer();
-										if (!ftpContext->_fileList->Empty())
-										{
-											std::string fn;
-											ftpContext->_fileList->Take(fn);
-											epsv(ftpContext, fn, std::bind(&State::stor, this, ftpContext, fn));
-										}
-										else
-										{
-											ftpContext->Close();
-										}
-									}
-									else
-									{
-										epsv(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
-									}
+							if (res.find("226") == 0)
+							{
+								ftpContext->ReadyForTransfer();
+								if (!ftpContext->_fileList->Empty())
+								{
+									std::string fn;
+									ftpContext->_fileList->Take(fn);
+									epsv(ftpContext, fn, std::bind(&State::stor, this, ftpContext, fn));
 								}
 								else
 								{
-									epsv(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
+									ftpContext->Close();
 								}
-							}, [this,ftpContext,filename]
+							}
+							else
 							{
-								ctrl_err(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
-							});
-						});
+								epsv(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
+							}
+						}
+						else
+						{
+							epsv(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
+						}
+					}, [this,ftpContext,filename]
+					{
+						ctrl_err(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
+					});
 				}
 				else
 				{
@@ -442,7 +453,6 @@ void State::nlst(std::shared_ptr<FtpContext> ftpContext, std::string dir)
 									                         if (ec)
 									                         {
 										                         epsv(ftpContext, dir, std::bind(&State::nlst, this, ftpContext, dir));
-
 										                         return;
 									                         }
 									                         ::fprintf(stdout, "NLST completed.\n");

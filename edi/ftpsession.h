@@ -50,7 +50,7 @@ public:
 	void async_readutil(const std::string& delim, const PositiveCallback& callback, const NegitiveCallback& err);
 
 	template <typename Handler>
-	void transmit_file(std::string fn, Handler handler);
+	bool transmit_file(std::string fn, Handler handler);
 
 	boost::system::error_code Err() const
 	{
@@ -97,14 +97,13 @@ private:
 };
 
 template <typename Handler>
-void FtpSession::transmit_file(std::string fn, Handler handler)
+bool FtpSession::transmit_file(std::string fn, Handler handler)
 {
 	boost::system::error_code ec;
 	_file.assign(::CreateFile(fn.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
 	                          0), ec);
 	if (_file.is_open())
 	{
-		_deadline.expires_from_now(TIMEOUT);
 		boost::asio::windows::overlapped_ptr overlapped(_sock.get_io_service(), handler);
 		BOOL ok = ::TransmitFile(_sock.native(), _file.native(), 0, 0, overlapped.get(), 0, 0);
 		DWORD last_error = ::GetLastError();
@@ -117,5 +116,9 @@ void FtpSession::transmit_file(std::string fn, Handler handler)
 		{
 			overlapped.release();
 		}
+		return true;
 	}
+	else
+		_file.close(_ec);
+	return false;
 }
