@@ -17,13 +17,12 @@ void FtpSession::async_connect(const PositiveCallback& callback, const NegitiveC
 	_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this(),std::placeholders::_1));
 }
 
-void FtpSession::async_send(const std::string& str, const PositiveCallback& callback, const NegitiveCallback& err)
+void FtpSession::async_send(std::string str, const PositiveCallback& callback, const NegitiveCallback& err)
 {
-	_req->sputn(str.c_str(), str.size());
 	_deadline.expires_from_now(TIMEOUT);
 	auto t = shared_from_this();
-	boost::asio::async_write(_sock, *_req,
-	                         [t,str, callback,err](const boost::system::error_code& ec, std::size_t bytes_transferred)
+	boost::asio::async_write(_sock, boost::asio::buffer(str),
+	                         [t,callback,err](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	                         {
 		                         if (ec)
 		                         {

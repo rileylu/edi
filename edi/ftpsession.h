@@ -18,7 +18,6 @@ public:
 		_file(ios),
 		_ep(boost::asio::ip::address::from_string(raw_ip_address), port),
 		_rep(std::make_shared<boost::asio::streambuf>()),
-		_req(std::make_shared<boost::asio::streambuf>()),
 		_deadline(ios)
 	{
 		_sock.set_option(boost::asio::socket_base::reuse_address(true));
@@ -44,16 +43,14 @@ public:
 
 	void async_connect(const PositiveCallback& callback, const NegitiveCallback& err);
 
-	void async_send(const std::string& str, const PositiveCallback& callback, const NegitiveCallback& err);
-	//void async_send(std::shared_ptr<boost::asio::streambuf> buf, const PositiveCallback& callback,
-	//                const NegitiveCallback& err);
+	void async_send(std::string str, const PositiveCallback& callback, const NegitiveCallback& err);
 
 	void async_read(const PositiveCallback& callback, const NegitiveCallback& err);
 
 	void async_readutil(const std::string& delim, const PositiveCallback& callback, const NegitiveCallback& err);
 
 	template <typename Handler>
-	void transmit_file(const std::string& fn, Handler handler);
+	void transmit_file(std::string fn, Handler handler);
 
 	boost::system::error_code Err() const
 	{
@@ -74,7 +71,6 @@ public:
 	void Close()
 	{
 		_rep.reset();
-		_req.reset();
 		_sock.shutdown(_sock.shutdown_both, _ec);
 		_sock.close(_ec);
 		_file.close(_ec);
@@ -96,13 +92,12 @@ private:
 	boost::asio::windows::random_access_handle _file;
 	boost::asio::ip::tcp::endpoint _ep;
 	std::shared_ptr<boost::asio::streambuf> _rep;
-	std::shared_ptr<boost::asio::streambuf> _req;
 	boost::system::error_code _ec;
 	boost::asio::deadline_timer _deadline;
 };
 
 template <typename Handler>
-void FtpSession::transmit_file(const std::string& fn, Handler handler)
+void FtpSession::transmit_file(std::string fn, Handler handler)
 {
 	boost::system::error_code ec;
 	_file.assign(::CreateFile(fn.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,

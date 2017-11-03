@@ -8,7 +8,7 @@
 
 using namespace boost;
 
-void State::connect(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
+void State::connect(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun)
 {
 	ftpContext->GetCtrlSession()->async_connect([this, filename, ftpContext, fun](std::size_t bytes_transferred)
 	{
@@ -36,7 +36,7 @@ void State::connect(std::shared_ptr<FtpContext> ftpContext, const std::string& f
 	}, std::bind(&State::ctrl_err, this, ftpContext, filename, fun));
 }
 
-void State::user(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
+void State::user(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun)
 {
 	std::string request;
 	request += "USER ";
@@ -70,7 +70,7 @@ void State::user(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 	}, std::bind(&State::ctrl_err, this, ftpContext, filename, fun));
 }
 
-void State::pass(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
+void State::pass(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun)
 {
 	std::string request;
 	request += "PASS ";
@@ -111,7 +111,7 @@ void State::pass(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 	}, std::bind(&State::ctrl_err, this, ftpContext, filename, fun));
 }
 
-void State::epsv(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
+void State::epsv(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun)
 {
 	if (ftpContext->GetDataSession())
 	{
@@ -171,7 +171,7 @@ void State::epsv(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 	}, std::bind(&State::ctrl_err, this, ftpContext, filename, fun));
 }
 
-void State::retr(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
+void State::retr(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 {
 	std::string cmd = "RETR ";
 	cmd += filename;
@@ -307,7 +307,7 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 	});
 }
 
-void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
+void State::stor(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 {
 	std::string cmd;
 	cmd += "STOR ";
@@ -393,15 +393,15 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 	});
 }
 
-void State::nlst(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
+void State::nlst(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 {
 }
 
-void State::ctrl_err(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
+void State::ctrl_err(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun)
 {
 	std::fprintf(stderr, "Rebuilding...\n");
 	ftpContext->_fileList->PutFront(filename);
-	ftpContext->ReBuild([this,ftpContext,filename,fun]
+	ftpContext->ReBuild([this,ftpContext,fun]
 	{
 		std::string fn;
 		if(!ftpContext->_fileList->Empty())
@@ -410,28 +410,23 @@ void State::ctrl_err(std::shared_ptr<FtpContext> ftpContext, const std::string& 
 			ftpContext->_fileList->Take(fn);
 			connect(ftpContext, fn, fun);
 		}
-		else
-		{
-			ftpContext->GetDataSession()->Close();
-			ftpContext->GetCtrlSession()->Close();
-		}
 	});
 }
 
 
-void EPSVReadyState::DoRecvFile(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
+void EPSVReadyState::DoRecvFile(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 {
 	auto fun = std::bind(&EPSVReadyState::retr, this, ftpContext, filename);
 	epsv(ftpContext, filename, fun);
 }
 
-void EPSVReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
+void EPSVReadyState::DoSendFile(std::shared_ptr<FtpContext> ftpContext, std::string filename)
 {
 	auto fun = std::bind(&EPSVReadyState::stor, this, ftpContext, filename);
 	epsv(ftpContext, filename, fun);
 }
 
-void EPSVReadyState::DoList(std::shared_ptr<FtpContext> ftpContext, const std::string& dir)
+void EPSVReadyState::DoList(std::shared_ptr<FtpContext> ftpContext, std::string dir)
 {
 	auto fun = std::bind(&EPSVReadyState::nlst, this, ftpContext, dir);
 	epsv(ftpContext, dir, fun);
