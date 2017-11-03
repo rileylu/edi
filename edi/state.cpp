@@ -248,6 +248,11 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 												ftpContext->_fileList->Take(fn);
 												epsv(ftpContext, fn, std::bind(&State::retr, this, ftpContext, fn));
 											}
+											else
+											{
+												ftpContext->GetCtrlSession()->Close();
+												ftpContext->GetDataSession()->Close();
+											}
 										}
 										else
 										{
@@ -337,7 +342,7 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 								if (std::getline(is, res))
 								{
 #ifdef _DEBUG
-										fprintf(stdout, "%s\n", res.c_str());
+									fprintf(stdout, "%s\n", res.c_str());
 #endif
 									if (res.find("226") == 0)
 									{
@@ -347,6 +352,11 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 											std::string fn;
 											ftpContext->_fileList->Take(fn);
 											epsv(ftpContext, fn, std::bind(&State::stor, this, ftpContext, fn));
+										}
+										else
+										{
+											ftpContext->GetCtrlSession()->Close();
+											ftpContext->GetDataSession()->Close();
 										}
 									}
 									else
@@ -385,6 +395,16 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 
 void State::nlst(std::shared_ptr<FtpContext> ftpContext, const std::string& filename)
 {
+}
+
+void State::ctrl_err(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
+{
+	std::fprintf(stderr, "Rebuilding...\n");
+	ftpContext->ReBuild([this,ftpContext,filename,fun]
+	{
+		std::fprintf(stderr, "Connecting...\n");
+		connect(ftpContext, "", fun);
+	});
 }
 
 

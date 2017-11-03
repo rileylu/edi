@@ -28,16 +28,14 @@ public:
 	}
 
 protected:
-	State()
-	{
-	}
+	State() = default;
 
 	void ChangeStatus(std::shared_ptr<FtpContext> ftpContext, State* state)
 	{
 		ftpContext->ChangeStatus(state);
 	}
 
-	void connect(std::shared_ptr<FtpContext> ftpContext, const std::string& filenam, std::function<void()> fun);
+	void connect(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun);
 	void user(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun);
 	void pass(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun);
 	void epsv(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun);
@@ -45,16 +43,7 @@ protected:
 	void stor(std::shared_ptr<FtpContext> ftpContext, const std::string& filename);
 	void nlst(std::shared_ptr<FtpContext> ftpContext, const std::string& filename);
 
-	void ctrl_err(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
-	{
-		std::fprintf(stderr, "ErrorCode: %d Message: %s\nRebuilding...\n", ftpContext->GetCtrlSession()->Err().value(),
-		             ftpContext->GetCtrlSession()->Err().message().c_str());
-		ftpContext->ReBuild([this,ftpContext,filename,fun]
-		{
-			std::fprintf(stderr, "Connecting...\n");
-			connect(ftpContext, filename, fun);
-		});
-	}
+	void ctrl_err(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun);
 
 	void data_err(std::shared_ptr<FtpContext> ftpContext)
 	{

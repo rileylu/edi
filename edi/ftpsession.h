@@ -17,7 +17,8 @@ public:
 		_sock(ios, boost::asio::ip::tcp::v4()),
 		_file(ios),
 		_ep(boost::asio::ip::address::from_string(raw_ip_address), port),
-		_buf(std::make_shared<boost::asio::streambuf>()),
+		_rep(std::make_shared<boost::asio::streambuf>()),
+		_req(std::make_shared<boost::asio::streambuf>()),
 		_deadline(ios)
 	{
 		_sock.set_option(boost::asio::socket_base::reuse_address(true));
@@ -44,8 +45,8 @@ public:
 	void async_connect(const PositiveCallback& callback, const NegitiveCallback& err);
 
 	void async_send(const std::string& str, const PositiveCallback& callback, const NegitiveCallback& err);
-	void async_send(std::shared_ptr<boost::asio::streambuf> buf, const PositiveCallback& callback,
-	                const NegitiveCallback& err);
+	//void async_send(std::shared_ptr<boost::asio::streambuf> buf, const PositiveCallback& callback,
+	//                const NegitiveCallback& err);
 
 	void async_read(const PositiveCallback& callback, const NegitiveCallback& err);
 
@@ -61,7 +62,7 @@ public:
 
 	std::shared_ptr<boost::asio::streambuf>& RecvBuf()
 	{
-		return _buf;
+		return _rep;
 	}
 
 	void Cancel()
@@ -72,28 +73,30 @@ public:
 
 	void Close()
 	{
-		_buf.reset();
+		_rep.reset();
+		_req.reset();
 		_sock.shutdown(_sock.shutdown_both, _ec);
 		_sock.close(_ec);
 		_file.close(_ec);
 	}
 
 private:
-	void check_deadline()
+	void check_deadline(const boost::system::error_code&)
 	{
 		if (_deadline.expires_at() <= boost::asio::deadline_timer::traits_type::now())
 		{
 			Close();
 			return;
 		}
-		_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this()));
+		_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this(),std::placeholders::_1));
 	}
 
 private:
 	boost::asio::ip::tcp::socket _sock;
 	boost::asio::windows::random_access_handle _file;
 	boost::asio::ip::tcp::endpoint _ep;
-	std::shared_ptr<boost::asio::streambuf> _buf;
+	std::shared_ptr<boost::asio::streambuf> _rep;
+	std::shared_ptr<boost::asio::streambuf> _req;
 	boost::system::error_code _ec;
 	boost::asio::deadline_timer _deadline;
 };
