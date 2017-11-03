@@ -36,7 +36,7 @@ public:
 		_deadline.cancel(_ec);
 	}
 
-	boost::asio::deadline_timer &Timer()
+	boost::asio::deadline_timer& Timer()
 	{
 		return _deadline;
 	}
@@ -84,7 +84,7 @@ private:
 			Close();
 			return;
 		}
-		_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this(),std::placeholders::_1));
+		_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this(), std::placeholders::_1));
 	}
 
 private:
@@ -118,7 +118,6 @@ bool FtpSession::transmit_file(std::string fn, Handler handler)
 		}
 		return true;
 	}
-	else
-		_file.close(_ec);
+	_file.close(_ec);
 	return false;
 }
