@@ -400,10 +400,21 @@ void State::nlst(std::shared_ptr<FtpContext> ftpContext, const std::string& file
 void State::ctrl_err(std::shared_ptr<FtpContext> ftpContext, const std::string& filename, std::function<void()> fun)
 {
 	std::fprintf(stderr, "Rebuilding...\n");
+	ftpContext->_fileList->PutFront(filename);
 	ftpContext->ReBuild([this,ftpContext,filename,fun]
 	{
-		std::fprintf(stderr, "Connecting...\n");
-		connect(ftpContext, filename, fun);
+		std::string fn;
+		if(!ftpContext->_fileList->Empty())
+		{
+			std::fprintf(stderr, "Connecting...\n");
+			ftpContext->_fileList->Take(fn);
+			connect(ftpContext, fn, fun);
+		}
+		else
+		{
+			ftpContext->GetDataSession()->Close();
+			ftpContext->GetCtrlSession()->Close();
+		}
 	});
 }
 
