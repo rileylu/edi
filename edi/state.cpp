@@ -403,7 +403,7 @@ void State::ctrl_err(std::shared_ptr<FtpContext> ftpContext, const std::string& 
 	ftpContext->ReBuild([this,ftpContext,filename,fun]
 	{
 		std::fprintf(stderr, "Connecting...\n");
-		connect(ftpContext, "", fun);
+		connect(ftpContext, filename, fun);
 	});
 }
 
