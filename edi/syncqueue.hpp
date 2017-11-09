@@ -37,15 +37,18 @@ public:
 		list = std::move(_queue);
 		_notFull.notify_one();
 	}
-	void Take(T& t)
+	bool Take(T& t)
 	{
 		std::unique_lock<std::mutex> lck(_m);
-		_notEmpty.wait(lck, [this] {return _needStop || NotEmpty(); });
-		if (_needStop)
-			return;
+		bool result = _notEmpty.wait_for(lck, std::chrono::seconds(5), [this] {return _needStop || NotEmpty(); });
+		if (_needStop || !result)
+		{
+			return false;
+		}
 		t = _queue.front();
 		_queue.pop_front();
 		_notFull.notify_one();
+		return true;
 	}
 	void Stop()
 	{

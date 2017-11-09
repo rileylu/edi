@@ -192,13 +192,14 @@ inline void FtpSession::Close()
 	_sock.shutdown(_sock.shutdown_both, _ec);
 	_sock.close(_ec);
 	_file.close(_ec);
+	_deadline.cancel(_ec);
 }
 
 inline void FtpSession::check_deadline(const boost::system::error_code &)
 {
 	if (_deadline.expires_at() <= boost::asio::deadline_timer::traits_type::now())
 	{
-		_sock.close(_ec);
+		_sock.cancel(_ec);
 		NoWait();
 		return;
 	}

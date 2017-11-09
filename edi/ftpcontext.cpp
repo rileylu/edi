@@ -26,6 +26,7 @@ void FtpContext::List()
 {
 	NlstState::Instance().Run(shared_from_this());
 }
+
 void FtpContext::ReBuild(State & s)
 {
 	_ctrlSession->Close();

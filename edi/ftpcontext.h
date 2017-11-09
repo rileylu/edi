@@ -118,4 +118,3 @@ inline void FtpContext::BuildDataSession(unsigned short port)
 		_dataSession->Close();
 	_dataSession.reset(new FtpSession(_ios, _ip_address, port));
 }
-
