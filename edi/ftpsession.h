@@ -3,7 +3,7 @@
 #include <boost/noncopyable.hpp>
 #include <string>
 
-#define TIMEOUT boost::posix_time::seconds(120)
+#define TIMEOUT boost::posix_time::seconds(30)
 
 using Callback = std::function<void()>;
 class FtpSession : boost::noncopyable, public std::enable_shared_from_this<FtpSession>
@@ -19,13 +19,13 @@ public:
 
 	boost::asio::deadline_timer& Timer();
 	template<typename P, typename N>
-	void async_connect(P&& cb, N&& ecb);
+	void async_connect(P cb, N ecb);
 	template<typename P, typename N>
-	void async_readuntil(std::string delim, P&& p, N&& n);
+	void async_readuntil(const std::string& delim, P p, N n);
 	template<typename P, typename N>
-	void async_send(const std::string& str, P&& p, N&& n);
+	void async_send(const std::string& str, P p, N n);
 	template <typename P, typename N>
-	void async_read(P&& p, N&& n);
+	void async_read(P p, N n);
 	template <typename Handler>
 	bool transmit_file(std::string fn, Handler handler);
 
@@ -53,7 +53,7 @@ private:
 };
 
 template<typename P, typename N>
-inline void FtpSession::async_connect(P && cb, N && ecb)
+inline void FtpSession::async_connect(P  cb, N  ecb)
 {
 	_deadline.expires_from_now(TIMEOUT);
 	auto t = shared_from_this();
@@ -72,7 +72,7 @@ inline void FtpSession::async_connect(P && cb, N && ecb)
 }
 
 template<typename P, typename N>
-inline void FtpSession::async_readuntil(std::string delim, P && p, N && n)
+inline void FtpSession::async_readuntil(const std::string& delim, P  p, N  n)
 {
 	_deadline.expires_from_now(TIMEOUT);
 	auto t = shared_from_this();
@@ -91,11 +91,11 @@ inline void FtpSession::async_readuntil(std::string delim, P && p, N && n)
 }
 
 template<typename P, typename N>
-inline void FtpSession::async_send(const std::string & str, P && p, N && n)
+inline void FtpSession::async_send(const std::string & str, P  p, N  n)
 {
 	_deadline.expires_from_now(TIMEOUT);
 	auto t = shared_from_this();
-	_req = str;
+	_req = std::move(str);
 	boost::asio::async_write(_sock, boost::asio::buffer(_req),
 		[t, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	{
@@ -112,7 +112,7 @@ inline void FtpSession::async_send(const std::string & str, P && p, N && n)
 }
 
 template<typename P, typename N>
-inline void FtpSession::async_read(P && p, N && n)
+inline void FtpSession::async_read(P  p, N  n)
 {
 	_deadline.expires_from_now(TIMEOUT);
 	auto t = shared_from_this();

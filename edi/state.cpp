@@ -655,7 +655,14 @@ inline void State::epsv(std::shared_ptr<FtpContext> ftpContext)
 void State::retr(std::shared_ptr<FtpContext> ftpContext)
 {
 	if (ftpContext->_current_file.size() == 0)
+	{
+		if (ftpContext->_fileList->Empty())
+		{
+			ftpContext->Close();
+			return;
+		}
 		ftpContext->_fileList->Take(ftpContext->_current_file);
+	}
 	std::string cmd = "RETR ";
 	cmd += ftpContext->_current_file;
 	cmd += "\r\n";
