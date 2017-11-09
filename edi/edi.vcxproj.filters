@@ -27,6 +27,9 @@
     <ClCompile Include="ftpsession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sessionmgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ftpcontext.h">
@@ -42,6 +45,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ftpsession.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sessionmgr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

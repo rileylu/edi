@@ -6,43 +6,35 @@
 using namespace boost;
 
 FtpContext::FtpContext(asio::io_service& ios, const std::string& ip, unsigned short port, const std::string& user,
-                       const std::string& pwd)
-	: _ios(ios), _ip_address(ip), _port(port), _user(user), _pwd(pwd), _fileList(new SyncQueue<std::string>),
-	  _state(&State::Instance()), _ctrlSession(nullptr), _dataSession(nullptr), _ready_for_transfer(true)
+	const std::string& pwd, const std::string& dir, std::shared_ptr<SyncQueue<std::string>> fileList)
+	: _ios(ios), _ip_address(ip), _port(port), _user(user), _pwd(pwd), _dir(dir), _fileList(fileList), _ctrlSession(nullptr), _dataSession(nullptr)
 {
 	_ctrlSession = std::make_shared<FtpSession>(ios, ip, port);
 }
 
-void FtpContext::SendFile(const std::string& fileName)
+void FtpContext::SendFile()
 {
-	WaitForTransfer();
-	_state->DoSendFile(shared_from_this(), fileName);
+	StorState::Instance().Run(shared_from_this());
 }
 
-void FtpContext::SendFile(std::shared_ptr<SyncQueue<std::string>> fileList)
+void FtpContext::RecvFile()
 {
-	_fileList = fileList;
-	std::string filename;
-	_fileList->Take(filename);
-	_state->DoSendFile(shared_from_this(), filename);
+	RecvState::Instance().Run(shared_from_this());
 }
 
-void FtpContext::RecvFile(const std::string& fileName)
+void FtpContext::List()
 {
-	WaitForTransfer();
-	_state->DoRecvFile(shared_from_this(), fileName);
+	NlstState::Instance().Run(shared_from_this());
 }
-
-void FtpContext::RecvFile(std::shared_ptr<SyncQueue<std::string>> fileList)
+void FtpContext::ReBuild(State & s)
 {
-	_fileList = fileList;
-	std::string fn;
-	_fileList->Take(fn);
-	_state->DoRecvFile(shared_from_this(), fn);
-}
-
-void FtpContext::List(const std::string& dir)
-{
-	WaitForTransfer();
-	_state->DoList(shared_from_this(), dir);
+	_ctrlSession->Close();
+	_ctrlSession.reset(new FtpSession(_ios, _ip_address, _port));
+	if (_dataSession)
+	{
+		_dataSession->Close();
+		_dataSession.reset();
+	}
+	_ctrlSession->Timer().expires_from_now(boost::posix_time::seconds(30));
+	_ctrlSession->Timer().async_wait(std::bind(&State::connect, &s, shared_from_this()));
 }

@@ -15,112 +15,34 @@ class FtpContext : public std::enable_shared_from_this<FtpContext>
 {
 public:
 	FtpContext(boost::asio::io_service& ios, const std::string& ip, unsigned short port, const std::string& user,
-	           const std::string& pwd);
-	void SendFile(const std::string& fileName);
-	void SendFile(std::shared_ptr<SyncQueue<std::string>> fileList);
-	void RecvFile(const std::string& fileName);
-	void RecvFile(std::shared_ptr<SyncQueue<std::string>> fileList);
-	void List(const std::string& dir);
+		const std::string& pwd, const std::string& dir, std::shared_ptr<SyncQueue<std::string>> fileList);
 
-	std::shared_ptr<FtpSession> GetCtrlSession() const
-	{
-		return _ctrlSession;
-	}
+	void SendFile();
 
-	std::shared_ptr<FtpSession> GetDataSession() const
-	{
-		return _dataSession;
-	}
+	void RecvFile();
 
-	void BuildDataSession(unsigned short port)
-	{
-		if (_dataSession)
-			_dataSession->Close();
-		_dataSession.reset(new FtpSession(_ios, _ip_address, port));
-	}
+	void List();
 
-	std::string GetUser() const
-	{
-		return _user;
-	}
+	std::shared_ptr<FtpSession> GetCtrlSession() const;
 
-	std::string GetPWD() const
-	{
-		return _pwd;
-	}
+	std::shared_ptr<FtpSession> GetDataSession() const;
 
-	std::string GetIP() const
-	{
-		return _ip_address;
-	}
+	std::string GetUser() const;
 
-	unsigned short GetPort() const
-	{
-		return _port;
-	}
+	std::string GetPWD() const;
 
-	boost::asio::io_service& GetIOS() const
-	{
-		return _ios;
-	}
-	void Close() 
-	{
-		if (_ctrlSession)
-		{
-			_ctrlSession->Close();
-			_ctrlSession.reset();
-		}
-		if (_dataSession)
-		{
-			_dataSession->Close();
-			_dataSession.reset();
-			
-		}
-	}
+	std::string GetIP() const;
+
+	unsigned short GetPort() const;
+
+	boost::asio::io_service& GetIOS() const;
+
+	void Close();
 
 private:
-	template <typename Fun>
-	void ReBuild(Fun&& fun)
-	{
-		_ctrlSession->Close();
-		_ctrlSession.reset(new FtpSession(_ios, _ip_address, _port));
-		if (_dataSession)
-		{
-			_dataSession->Close();
-			_dataSession.reset();
-		}
-		_ctrlSession->Timer().expires_from_now(boost::posix_time::seconds(30));
-		ChangeStatus(&State::Instance());
-		_ctrlSession->Timer().async_wait([fun](const boost::system::error_code& )
-		{
-			fun();
-		});
-	}
+	void BuildDataSession(unsigned short port);
 
-	void ChangeStatus(State* state)
-	{
-		_state = state;
-	}
-
-	bool WaitForTransfer()
-	{
-		std::unique_lock<std::mutex> lck(_m);
-		bool result = _cv.wait_for(lck, std::chrono::seconds(1), [this]
-		{
-			return _ready_for_transfer;
-		});
-		if (result)
-			_ready_for_transfer = false;
-		return result;
-	}
-
-	void ReadyForTransfer()
-	{
-		std::lock_guard<std::mutex> lck(_m);
-		_ready_for_transfer = true;
-		_cv.notify_one();
-	}
-
+	void ReBuild(State &s);
 private:
 
 	boost::asio::io_service& _ios;
@@ -128,17 +50,72 @@ private:
 	unsigned short _port;
 	std::string _user;
 	std::string _pwd;
+	std::string _dir;
+	std::string _current_file;
+	std::string _res;
 	std::shared_ptr<SyncQueue<std::string>> _fileList;
 
-
 	friend class State;
-	friend class EPSVReadyState;
-	State* _state;
+	friend class RecvState;
+	friend class StorState;
+	friend class NlstState;
 	std::shared_ptr<FtpSession> _ctrlSession;
 	std::shared_ptr<FtpSession> _dataSession;
-
-	std::mutex _m;
-	bool _ready_for_transfer;
-	std::condition_variable _cv;
-
 };
+
+inline std::shared_ptr<FtpSession> FtpContext::GetCtrlSession() const
+{
+	return _ctrlSession;
+}
+
+inline std::shared_ptr<FtpSession> FtpContext::GetDataSession() const
+{
+	return _dataSession;
+}
+
+inline std::string FtpContext::GetUser() const
+{
+	return _user;
+}
+
+inline std::string FtpContext::GetPWD() const
+{
+	return _pwd;
+}
+
+inline std::string FtpContext::GetIP() const
+{
+	return _ip_address;
+}
+
+inline unsigned short FtpContext::GetPort() const
+{
+	return _port;
+}
+
+inline boost::asio::io_service & FtpContext::GetIOS() const
+{
+	return _ios;
+}
+
+inline void FtpContext::Close()
+{
+	if (_ctrlSession)
+	{
+		_ctrlSession->Close();
+		_ctrlSession.reset();
+	}
+	if (_dataSession)
+	{
+		_dataSession->Close();
+		_dataSession.reset();
+	}
+}
+
+inline void FtpContext::BuildDataSession(unsigned short port)
+{
+	if (_dataSession)
+		_dataSession->Close();
+	_dataSession.reset(new FtpSession(_ios, _ip_address, port));
+}
+

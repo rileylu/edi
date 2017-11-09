@@ -1,72 +1,73 @@
 #pragma once
 #include <memory>
 #include "ftpcontext.h"
-
-
 class State
 {
 public:
-	static State& Instance()
-	{
-		static State state;
-		return state;
-	}
-
-	virtual void DoSendFile(std::shared_ptr<FtpContext> ftpContext, std::string filename)
-	{
-		connect(ftpContext, filename, std::bind(&State::stor, this, ftpContext, filename));
-	}
-
-	virtual void DoRecvFile(std::shared_ptr<FtpContext> ftpContext, std::string filename)
-	{
-		connect(ftpContext, filename, std::bind(&State::retr, this, ftpContext, filename));
-	}
-
-	virtual void DoList(std::shared_ptr<FtpContext> ftpContext, std::string dir)
-	{
-		connect(ftpContext, dir, std::bind(&State::nlst, this, ftpContext, dir));
-	}
+	void Run(std::shared_ptr<FtpContext> ftpContext);
 
 protected:
+	friend class FtpContext;
 	State() = default;
 
-	void ChangeStatus(std::shared_ptr<FtpContext> ftpContext, State* state)
-	{
-		ftpContext->ChangeStatus(state);
-	}
+	template<typename Fun>
+	void parse_response(std::shared_ptr<FtpContext> ftpContext, const std::string& response, Fun&& f);
 
-	void connect(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun);
-	void user(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun);
-	void pass(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun);
-	void epsv(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun);
-	void retr(std::shared_ptr<FtpContext> ftpContext, std::string filename);
-	void stor(std::shared_ptr<FtpContext> ftpContext, std::string filename);
-	void nlst(std::shared_ptr<FtpContext> ftpContext, std::string filename);
+	void session_err(std::shared_ptr<FtpContext> ftpContext);
+	void connect(std::shared_ptr<FtpContext> ftpContext);
+	void user(std::shared_ptr<FtpContext> ftpContext);
+	void pass(std::shared_ptr<FtpContext> ftpContext);
+	void epsv(std::shared_ptr<FtpContext> ftpContext);
+	void retr(std::shared_ptr<FtpContext> ftpContext);
+	void stor(std::shared_ptr<FtpContext> ftpContext);
+	void rnfr(std::shared_ptr<FtpContext> ftpContext);
+	void rnto(std::shared_ptr<FtpContext> ftpContext);
+	void nlst(std::shared_ptr<FtpContext> ftpContext);
+	void logout(std::shared_ptr<FtpContext> ftpContext);
+	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) = 0;
 
-	void ctrl_err(std::shared_ptr<FtpContext> ftpContext, std::string filename, std::function<void()> fun);
-
-	void data_err(std::shared_ptr<FtpContext> ftpContext)
-	{
-		std::fprintf(stderr, "ErrorCode: %d Message: %s\n", ftpContext->GetDataSession()->Err().value(),
-		             ftpContext->GetDataSession()->Err().message().c_str());
-		if (ftpContext->GetDataSession())
-		{
-			ftpContext->GetDataSession()->Close();
-			ftpContext->GetDataSession().reset();
-		}
-	}
 };
 
-class EPSVReadyState : public State
+class RecvState :public State
 {
 public:
-	static EPSVReadyState& Instance()
-	{
-		static EPSVReadyState epsvReadyState;
-		return epsvReadyState;
-	}
-
-	virtual void DoRecvFile(std::shared_ptr<FtpContext> ftpContext, std::string filename) override;
-	virtual void DoSendFile(std::shared_ptr<FtpContext> ftpContext, std::string filename) override;
-	virtual void DoList(std::shared_ptr<FtpContext> ftpContext, std::string dir) override;
+	static RecvState& Instance();
+protected:
+	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) override;
 };
+
+class StorState : public State
+{
+public:
+	static StorState& Instance();
+protected:
+	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) override;
+};
+
+class NlstState : public State
+{
+public:
+	static NlstState& Instance();
+protected:
+	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) override;
+};
+
+template<typename Fun>
+inline void State::parse_response(std::shared_ptr<FtpContext> ftpContext, const std::string& response, Fun && f)
+{
+	std::istream is(ftpContext->GetCtrlSession()->RecvBuf().get());
+	std::string res;
+	while (std::getline(is, res) && res[3] == '-');
+	ftpContext->_res = std::move(res);
+	if (ftpContext->_res.find(response) == 0)
+	{
+		f();
+	}
+	else if (ftpContext->_res.find("550") == 0)
+	{
+		ftpContext->_current_file.clear();
+		epsv(ftpContext);
+	}
+	else
+		ftpContext->ReBuild(*this);
+}

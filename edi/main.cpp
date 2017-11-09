@@ -49,14 +49,14 @@ int main()
 	std::vector<std::shared_ptr<FtpContext>> ftpContexts;
 	for (int i = 0; i < 100; ++i)
 	{
-		ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "124.207.27.34", 21, "gzftpqas01", "001testgz"));
+		ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "124.207.27.34", 21, "gzftpqas01", "001testgz", "", fileList));
 		//ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "127.0.0.1", 21, "lmz", "gklmz2013"));
 	}
 
 	for (auto& p : ftpContexts)
 	{
 		//p->SendFile(fileList);
-		p->RecvFile(fileList);
+		p->RecvFile();
 	}
 	for (auto& p : tds)
 	{
