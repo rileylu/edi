@@ -716,8 +716,6 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 							::fprintf(stdout, "Transfer File: %s completed.\n", newFileName.c_str());
 						});
 					}
-					else
-						epsv(ftpContext);
 				});
 			};
 			parse_response(ftpContext, "150", data);
