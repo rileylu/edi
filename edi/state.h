@@ -24,6 +24,7 @@ protected:
 	void rnto(std::shared_ptr<FtpContext> ftpContext);
 	void nlst(std::shared_ptr<FtpContext> ftpContext);
 	void logout(std::shared_ptr<FtpContext> ftpContext);
+	void cwd(std::shared_ptr<FtpContext> ftpContext);
 	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) = 0;
 
 };
@@ -55,7 +56,7 @@ protected:
 template<typename Fun>
 inline void State::parse_response(std::shared_ptr<FtpContext> ftpContext, const std::string& response, Fun && f)
 {
-	std::istream is(ftpContext->GetCtrlSession()->RecvBuf().get());
+	std::istream is(ftpContext->GetCtrlSession()->RecvBuf());
 	std::string res;
 	while (std::getline(is, res) && res[3] == '-');
 	ftpContext->_res = std::move(res);
@@ -65,8 +66,17 @@ inline void State::parse_response(std::shared_ptr<FtpContext> ftpContext, const 
 	}
 	else if (ftpContext->_res.find("550") == 0)
 	{
-		ftpContext->_current_file.clear();
-		epsv(ftpContext);
+		if (response == "150")
+		{
+			ftpContext->_current_file.clear();
+			epsv(ftpContext);
+		}
+		else if (response == "250")
+		{
+			ftpContext->Close();
+			ftpContext.reset();
+			return;
+		}
 	}
 	else
 		ftpContext->ReBuild(*this);

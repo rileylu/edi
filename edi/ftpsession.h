@@ -31,7 +31,7 @@ public:
 
 	boost::system::error_code Err() const;
 
-	std::shared_ptr<boost::asio::streambuf>& RecvBuf();
+	boost::asio::streambuf* RecvBuf() const;
 
 	void NoWait();
 	void Cancel();
@@ -45,7 +45,7 @@ private:
 	boost::asio::ip::tcp::socket _sock;
 	boost::asio::windows::random_access_handle _file;
 	boost::asio::ip::tcp::endpoint _ep;
-	std::shared_ptr<boost::asio::streambuf> _rep;
+	std::unique_ptr<boost::asio::streambuf> _rep;
 	std::string _req;
 	boost::system::error_code _ec;
 	boost::asio::deadline_timer _deadline;
@@ -170,9 +170,9 @@ inline boost::system::error_code FtpSession::Err() const
 	return _ec;
 }
 
-inline std::shared_ptr<boost::asio::streambuf>& FtpSession::RecvBuf()
+inline boost::asio::streambuf* FtpSession::RecvBuf() const
 {
-	return _rep;
+	return _rep.get();
 }
 
 inline void FtpSession::NoWait()
@@ -182,13 +182,14 @@ inline void FtpSession::NoWait()
 
 inline void FtpSession::Cancel()
 {
-	if (_sock.is_open())
-		_sock.cancel(_ec);
+	_sock.cancel(_ec);
+	_file.cancel(_ec);
+	_deadline.cancel(_ec);
 }
 
 inline void FtpSession::Close()
 {
-	_rep.reset();
+	_rep.reset(nullptr);
 	_sock.shutdown(_sock.shutdown_both, _ec);
 	_sock.close(_ec);
 	_file.close(_ec);
@@ -199,7 +200,8 @@ inline void FtpSession::check_deadline(const boost::system::error_code &)
 {
 	if (_deadline.expires_at() <= boost::asio::deadline_timer::traits_type::now())
 	{
-		_sock.cancel(_ec);
+		_sock.shutdown(boost::asio::socket_base::shutdown_both, _ec);
+		_sock.close(_ec);
 		NoWait();
 		return;
 	}

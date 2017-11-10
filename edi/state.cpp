@@ -582,7 +582,13 @@ void State::Run(std::shared_ptr<FtpContext> ftpContext)
 
 void State::session_err(std::shared_ptr<FtpContext> ftpContext)
 {
-	ftpContext->ReBuild(*this);
+	if (ftpContext->_fileList->Empty() && ftpContext->_current_file.size() == 0)
+	{
+		ftpContext->Close();
+		ftpContext.reset();
+	}
+	else
+		ftpContext->ReBuild(*this);
 }
 
 inline void State::connect(std::shared_ptr<FtpContext> ftpContext)
@@ -591,7 +597,9 @@ inline void State::connect(std::shared_ptr<FtpContext> ftpContext)
 		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
 			parse_response(ftpContext, "220", std::bind(&State::user, this, ftpContext));
 		}, std::bind(&State::session_err, this, ftpContext));
+
 	}, std::bind(&State::session_err, this, ftpContext));
+
 }
 
 inline void State::user(std::shared_ptr<FtpContext> ftpContext)
@@ -615,7 +623,7 @@ inline void State::pass(std::shared_ptr<FtpContext> ftpContext)
 	cmd += "\r\n";
 	ftpContext->GetCtrlSession()->async_send(cmd, [this, ftpContext] {
 		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
-			parse_response(ftpContext, "230", std::bind(&State::epsv, this, ftpContext));
+			parse_response(ftpContext, "230", std::bind(&State::cwd, this, ftpContext));
 		}, std::bind(&State::session_err, this, ftpContext));
 	}, std::bind(&State::session_err, this, ftpContext));
 }
@@ -625,31 +633,25 @@ inline void State::epsv(std::shared_ptr<FtpContext> ftpContext)
 	ftpContext->GetCtrlSession()->async_send("EPSV\r\n", [this, ftpContext] {
 		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
 			auto fun = [this, ftpContext] {
-				try
+				std::regex port_regex(R"(.*\|{3}([0-9]+)\|{1}.*)");
+				std::smatch results;
+				unsigned short port = 0;
+				if (std::regex_search(ftpContext->_res, results, port_regex))
 				{
-					std::regex port_regex(R"(.*\|{3}([0-9]+)\|{1}.*)");
-					std::smatch results;
-					unsigned short port = 0;
-					if (std::regex_search(ftpContext->_res, results, port_regex))
+					port = std::stoul(std::string(results[1].first, results[1].second));
+					ftpContext->BuildDataSession(port);
+					ftpContext->GetDataSession()->async_connect([this, ftpContext]
 					{
-						port = std::stoul(std::string(results[1].first, results[1].second));
-						ftpContext->BuildDataSession(port);
-						ftpContext->GetDataSession()->async_connect([this, ftpContext]
-						{
-							FileOP(ftpContext);
-						}, std::bind(&State::epsv, this, ftpContext));
-					}
-					else
-						epsv(ftpContext);
+						FileOP(ftpContext);
+					}, std::bind(&State::epsv, this, ftpContext));
 				}
-				catch (const std::invalid_argument& e)
-				{
+				else
 					epsv(ftpContext);
-				}
 			};
 			parse_response(ftpContext, "229", fun);
 		}, std::bind(&State::session_err, this, ftpContext));
 	}, std::bind(&State::session_err, this, ftpContext));
+
 }
 
 void State::retr(std::shared_ptr<FtpContext> ftpContext)
@@ -658,7 +660,7 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 	{
 		if (!ftpContext->_fileList->Take(ftpContext->_current_file))
 		{
-			ftpContext->Close();
+			logout(ftpContext);
 			return;
 		}
 	}
@@ -742,6 +744,28 @@ void State::nlst(std::shared_ptr<FtpContext> ftpContext)
 
 void State::logout(std::shared_ptr<FtpContext> ftpContext)
 {
+	ftpContext->GetCtrlSession()->async_send("QUIT\r\n", [this, ftpContext] {
+		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
+			parse_response(ftpContext, "221", [this, ftpContext]()mutable {
+				ftpContext->Close();
+				ftpContext.reset();
+			});
+		}, std::bind(&State::session_err, this, ftpContext));
+	}, std::bind(&State::session_err, this, ftpContext));
+
+}
+
+void State::cwd(std::shared_ptr<FtpContext> ftpContext)
+{
+	std::string cmd;
+	cmd += "CWD ";
+	cmd += ftpContext->_dir;
+	cmd += "\r\n";
+	ftpContext->GetCtrlSession()->async_send(cmd, [this, ftpContext] {
+		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
+			parse_response(ftpContext, "250", std::bind(&State::epsv, this, ftpContext));
+		}, std::bind(&State::session_err, this, ftpContext));
+	}, std::bind(&State::session_err, this, ftpContext));
 }
 
 RecvState & RecvState::Instance()
