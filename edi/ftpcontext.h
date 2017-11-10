@@ -120,5 +120,5 @@ inline void FtpContext::BuildDataSession(unsigned short port)
 	{
 		_dataSession->Close();
 	}
-	_dataSession.swap(t);
+	_dataSession.reset(t.release());
 }
