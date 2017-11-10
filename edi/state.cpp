@@ -3,7 +3,7 @@
 #include <iostream>
 #include <regex>
 #include <cstdio>
-#include "syncqueue.hpp"
+#include "threadsafe_queue.h"
 
 using namespace boost;
 //
@@ -582,7 +582,7 @@ void State::Run(std::shared_ptr<FtpContext> ftpContext)
 
 void State::session_err(std::shared_ptr<FtpContext> ftpContext)
 {
-	if (ftpContext->_fileList->Empty() && ftpContext->_current_file.size() == 0)
+	if (ftpContext->_fileList->empty() && ftpContext->_current_file.size() == 0)
 	{
 		ftpContext->Close();
 		ftpContext.reset();
@@ -663,7 +663,7 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 {
 	if (ftpContext->_current_file.size() == 0)
 	{
-		if (!ftpContext->_fileList->Take(ftpContext->_current_file))
+		if (!ftpContext->_fileList->try_pop(ftpContext->_current_file))
 		{
 			logout(ftpContext);
 			return;
@@ -689,7 +689,7 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 						ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext]
 						{
 							auto fun = [this, ftpContext] {
-								if (ftpContext->_fileList->Take(ftpContext->_current_file))
+								if (ftpContext->_fileList->try_pop(ftpContext->_current_file))
 									epsv(ftpContext);
 								else
 								{
@@ -700,9 +700,10 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 						}, std::bind(&State::session_err, this, ftpContext));
 						std::string newFileName = ftpContext->_current_file;
 						newFileName.erase(0, newFileName.find_last_of('/') + 1);
-						HANDLE hd = ::CreateFile(newFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_FLAG_OVERLAPPED, NULL);
+						HANDLE hd = ::CreateFile(newFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_FLAG_OVERLAPPED, NULL);
 						if (hd == INVALID_HANDLE_VALUE)
 						{
+							ftpContext->_fileList->push(ftpContext->_current_file);
 							::fprintf(stdout, "File: %s create failed. Error: %d\n", newFileName.c_str(), GetLastError());
 							return;
 						}

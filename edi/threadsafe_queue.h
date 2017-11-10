@@ -84,7 +84,7 @@ template<typename T>
 inline bool threadsafe_queue<T>::try_pop(T & value)
 {
 	std::unique_ptr<node> const old_head = try_pop_head(value);
-	return old_head;
+	return old_head.get() != nullptr;
 }
 
 template<typename T>

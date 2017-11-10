@@ -11,7 +11,7 @@
 #include <thread>
 #include <vector>
 #include <fstream>
-#include "syncqueue.hpp"
+#include "threadsafe_queue.h"
 
 using namespace boost;
 
@@ -20,7 +20,7 @@ int main()
 	asio::io_service ios;
 	asio::io_service::work w(ios);
 	std::vector<std::thread> tds;
-	std::shared_ptr<SyncQueue<std::string>> fileList(new SyncQueue<std::string>());
+	std::shared_ptr<threadsafe_queue<std::string>> fileList(new threadsafe_queue<std::string>());
 
 	std::ifstream in("list.txt");
 	std::string line;
@@ -31,7 +31,7 @@ int main()
 			std::size_t pos;
 			if ((pos = line.find('\r')) != line.npos)
 				line.erase(pos, 1);
-			fileList->Putback(std::move(line));
+			fileList->push(std::move(line));
 		}
 	}
 	in.close();
@@ -48,8 +48,8 @@ int main()
 	std::vector<std::shared_ptr<FtpContext>> ftpContexts;
 	for (int i = 0; i < 100; ++i)
 	{
-		ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "124.207.27.34", 21, "gzftpqas01", "001testgz", "/OUT/stockout/", fileList));
-		//ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "127.0.0.1", 21, "lmz", "gklmz2013", "/", fileList));
+		//ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "124.207.27.34", 21, "gzftpqas01", "001testgz", "/OUT/stockout/", fileList));
+		ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "127.0.0.1", 21, "lmz", "gklmz2013", "/OUT/stockout/", fileList));
 		//ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "127.0.0.1", 21, "lmz", "gklmz2013"));
 	}
 

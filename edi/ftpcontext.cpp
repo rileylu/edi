@@ -6,7 +6,7 @@
 using namespace boost;
 
 FtpContext::FtpContext(asio::io_service& ios, const std::string& ip, unsigned short port, const std::string& user,
-	const std::string& pwd, const std::string& dir, std::shared_ptr<SyncQueue<std::string>> fileList)
+	const std::string& pwd, const std::string& dir, std::shared_ptr<threadsafe_queue<std::string>> fileList)
 	: _ios(ios), _ip_address(ip), _port(port), _user(user), _pwd(pwd), _dir(dir), _fileList(fileList), _ctrlSession(nullptr), _dataSession(nullptr)
 {
 	_ctrlSession = std::move(std::make_unique<FtpSession>(ios, ip, port));

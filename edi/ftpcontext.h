@@ -8,14 +8,14 @@
 #include <utility>
 
 template <typename T>
-class SyncQueue;
+class threadsafe_queue;
 class State;
 
 class FtpContext : public std::enable_shared_from_this<FtpContext>
 {
 public:
 	FtpContext(boost::asio::io_service& ios, const std::string& ip, unsigned short port, const std::string& user,
-		const std::string& pwd, const std::string& dir, std::shared_ptr<SyncQueue<std::string>> fileList);
+		const std::string& pwd, const std::string& dir, std::shared_ptr<threadsafe_queue<std::string>> fileList);
 
 	void SendFile();
 
@@ -54,7 +54,7 @@ private:
 	std::string _dir;
 	std::string _current_file;
 	std::string _res;
-	std::shared_ptr<SyncQueue<std::string>> _fileList;
+	std::shared_ptr<threadsafe_queue<std::string>> _fileList;
 
 	friend class State;
 	friend class RecvState;
