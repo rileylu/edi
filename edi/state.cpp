@@ -274,9 +274,7 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 
 void State::stor(std::shared_ptr<FtpContext> ftpContext)
 {
-	if (ftpContext->_current_file.size() == 0)	{		if (!ftpContext->_fileList->try_pop(ftpContext->_current_file))		{			logout(ftpContext);			return;		}	}
-	std::string cmd;	cmd += "STOR ";	cmd += "tmp/" + ftpContext->_current_file;	cmd += "\r\n";	ftpContext->GetCtrlSession()->async_send(cmd, [ftpContext, this]	{		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [ftpContext, this]		{			parse_response(ftpContext, "150", [this, ftpContext] {				if (!ftpContext->GetDataSession()->transmit_file(ftpContext->_current_file,					[this, ftpContext](const boost::system::error_code& ec, std::size_t bytes_transferred)				{					ftpContext->GetDataSession()->Close();					if (ec)					{						return;					}				}))				{					ftpContext->_current_file.clear();					epsv(ftpContext);				}				ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {					parse_response(ftpContext, "226", [this, ftpContext] {						rnfr(ftpContext);					});				}, std::bind(&State::session_err, this, ftpContext));			});		}, std::bind(&State::session_err, this, ftpContext));	}, std::bind(&State::session_err, this, ftpContext));
-}
+	if (ftpContext->_current_file.size() == 0)	{		if (!ftpContext->_fileList->try_pop(ftpContext->_current_file))		{			logout(ftpContext);			return;		}	}	if (!ftpContext->GetDataSession()->transmit_file(ftpContext->_current_file,		[this, ftpContext](const boost::system::error_code& ec, std::size_t bytes_transferred)	{		ftpContext->GetDataSession()->Close();		if (ec)		{			abor(ftpContext);			return;		}		std::string cmd;		cmd += "STOR ";		cmd += "tmp/" + ftpContext->_current_file;		cmd += "\r\n";		ftpContext->GetCtrlSession()->async_send(cmd, [ftpContext, this]		{			ftpContext->GetCtrlSession()->async_readuntil("\r\n", [ftpContext, this]			{				parse_response(ftpContext, "150", [this, ftpContext] {					ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {						parse_response(ftpContext, "226", [this, ftpContext] {							rnfr(ftpContext);						});					}, std::bind(&State::session_err, this, ftpContext));				});			}, std::bind(&State::session_err, this, ftpContext));		}, std::bind(&State::session_err, this, ftpContext));	}))	{		::fprintf(stderr, "%s open error\n", ftpContext->_current_file.c_str());		ftpContext->_current_file.clear();		stor(ftpContext);		return;	}}
 
 void State::rnfr(std::shared_ptr<FtpContext> ftpContext)
 {
@@ -359,6 +357,17 @@ void State::cwd(std::shared_ptr<FtpContext> ftpContext)
 	ftpContext->GetCtrlSession()->async_send(cmd, [this, ftpContext] {
 		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
 			parse_response(ftpContext, "250", std::bind(&State::epsv, this, ftpContext));
+		}, std::bind(&State::session_err, this, ftpContext));
+	}, std::bind(&State::session_err, this, ftpContext));
+}
+
+void State::abor(std::shared_ptr<FtpContext> ftpContext)
+{
+	ftpContext->GetCtrlSession()->async_send("ABOR\r\n", [this, ftpContext] {
+		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
+			parse_response(ftpContext, "226", [this, ftpContext] {
+				epsv(ftpContext);
+			});
 		}, std::bind(&State::session_err, this, ftpContext));
 	}, std::bind(&State::session_err, this, ftpContext));
 }

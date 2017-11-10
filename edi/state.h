@@ -32,6 +32,7 @@ protected:
 	void nlst(std::shared_ptr<FtpContext> ftpContext);
 	void logout(std::shared_ptr<FtpContext> ftpContext);
 	void cwd(std::shared_ptr<FtpContext> ftpContext);
+	void abor(std::shared_ptr<FtpContext> ftpContext);
 	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) = 0;
 
 };
