@@ -39,6 +39,8 @@ public:
 
 	void Close();
 
+	std::string GetDir() const;
+
 private:
 
 	void BuildDataSession(unsigned short port);
@@ -57,7 +59,7 @@ private:
 	std::shared_ptr<threadsafe_queue<std::string>> _fileList;
 
 	friend class State;
-	friend class RecvState;
+	friend class RetrState;
 	friend class StorState;
 	friend class NlstState;
 	std::unique_ptr<FtpSession> _ctrlSession;
@@ -111,6 +113,11 @@ inline void FtpContext::Close()
 		_dataSession->Close();
 		_dataSession.reset(nullptr);
 	}
+}
+
+inline std::string FtpContext::GetDir() const
+{
+	return _dir;
 }
 
 inline void FtpContext::BuildDataSession(unsigned short port)

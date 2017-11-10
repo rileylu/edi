@@ -7,8 +7,15 @@ public:
 	void Run(std::shared_ptr<FtpContext> ftpContext);
 
 protected:
+	enum class Type
+	{
+		RETR,
+		STOR,
+		NLST
+	};
 	friend class FtpContext;
 	State() = default;
+	virtual Type GetType() const = 0;
 
 	template<typename Fun>
 	void parse_response(std::shared_ptr<FtpContext> ftpContext, const std::string& response, Fun&& f);
@@ -29,12 +36,13 @@ protected:
 
 };
 
-class RecvState :public State
+class RetrState :public State
 {
 public:
-	static RecvState& Instance();
+	static RetrState& Instance();
 protected:
 	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) override;
+	virtual Type GetType() const override;
 };
 
 class StorState : public State
@@ -42,6 +50,7 @@ class StorState : public State
 public:
 	static StorState& Instance();
 protected:
+	virtual Type GetType() const override;
 	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) override;
 };
 
@@ -50,6 +59,7 @@ class NlstState : public State
 public:
 	static NlstState& Instance();
 protected:
+	virtual Type GetType() const override;
 	virtual void FileOP(std::shared_ptr<FtpContext> ftpContext) override;
 };
 

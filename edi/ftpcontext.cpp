@@ -19,7 +19,7 @@ void FtpContext::SendFile()
 
 void FtpContext::RecvFile()
 {
-	RecvState::Instance().Run(shared_from_this());
+	RetrState::Instance().Run(shared_from_this());
 }
 
 void FtpContext::List()
