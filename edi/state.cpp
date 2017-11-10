@@ -679,26 +679,33 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 					if (ftpContext->GetDataSession()->Err().value() == 2)
 					{
 						//write to file or doing sth. else
+						auto buf = ftpContext->GetDataSession()->GetSharedRecvBuf();
+						ftpContext->GetDataSession()->Close();
+						ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext]
+						{
+							auto fun = [this, ftpContext] {
+								ftpContext->_current_file.clear();
+								epsv(ftpContext);
+							};
+							parse_response(ftpContext, "226", fun);
+						}, std::bind(&State::session_err, this, ftpContext));
 						std::string newFileName = ftpContext->_current_file;
 						newFileName.erase(0, newFileName.find_last_of('/') + 1);
 						HANDLE hd = ::CreateFile(newFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_FLAG_OVERLAPPED, NULL);
 						if (hd == INVALID_HANDLE_VALUE)
 						{
 							::fprintf(stdout, "File: %s create failed. Error: %d\n", newFileName.c_str(), GetLastError());
-							;
 							return;
 						}
 						std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(
 							ftpContext->GetIOS(), hd);
-						boost::asio::async_write(*sh, *ftpContext->GetDataSession()->RecvBuf(),
-							[newFileName, ftpContext, this, sh](
+						boost::asio::async_write(*sh, *buf,
+							[newFileName, ftpContext, this, sh, buf](
 								const boost::system::error_code& ec, std::size_t bytes_transferred)mutable
 						{
 							boost::system::error_code e;
 							sh->close(e);
 							sh.reset();
-							ftpContext->GetDataSession()->Close();
-							ftpContext->GetDataSession().reset();
 							if (ec)
 							{
 								std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ec.value(),
@@ -708,14 +715,6 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 							}
 							::fprintf(stdout, "Transfer File: %s completed.\n", newFileName.c_str());
 						});
-						ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext]
-						{
-							auto fun = [this, ftpContext] {
-								ftpContext->_current_file.clear();
-								epsv(ftpContext);
-							};
-							parse_response(ftpContext, "226", fun);
-						}, std::bind(&State::session_err, this, ftpContext));
 					}
 					else
 						epsv(ftpContext);

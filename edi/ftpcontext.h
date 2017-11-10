@@ -23,9 +23,9 @@ public:
 
 	void List();
 
-	std::shared_ptr<FtpSession> GetCtrlSession() const;
+	FtpSession* GetCtrlSession() const;
 
-	std::shared_ptr<FtpSession> GetDataSession() const;
+	FtpSession* GetDataSession() const;
 
 	std::string GetUser() const;
 
@@ -40,6 +40,7 @@ public:
 	void Close();
 
 private:
+
 	void BuildDataSession(unsigned short port);
 
 	void ReBuild(State &s);
@@ -59,18 +60,18 @@ private:
 	friend class RecvState;
 	friend class StorState;
 	friend class NlstState;
-	std::shared_ptr<FtpSession> _ctrlSession;
-	std::shared_ptr<FtpSession> _dataSession;
+	std::unique_ptr<FtpSession> _ctrlSession;
+	std::unique_ptr<FtpSession> _dataSession;
 };
 
-inline std::shared_ptr<FtpSession> FtpContext::GetCtrlSession() const
+inline FtpSession* FtpContext::GetCtrlSession() const
 {
-	return _ctrlSession;
+	return _ctrlSession.get();
 }
 
-inline std::shared_ptr<FtpSession> FtpContext::GetDataSession() const
+inline FtpSession* FtpContext::GetDataSession() const
 {
-	return _dataSession;
+	return _dataSession.get();
 }
 
 inline std::string FtpContext::GetUser() const
@@ -103,18 +104,21 @@ inline void FtpContext::Close()
 	if (_ctrlSession)
 	{
 		_ctrlSession->Close();
-		_ctrlSession.reset();
+		_ctrlSession.reset(nullptr);
 	}
 	if (_dataSession)
 	{
 		_dataSession->Close();
-		_dataSession.reset();
+		_dataSession.reset(nullptr);
 	}
 }
 
 inline void FtpContext::BuildDataSession(unsigned short port)
 {
+	auto t = std::make_unique<FtpSession>(_ios, _ip_address, port);
 	if (_dataSession)
+	{
 		_dataSession->Close();
-	_dataSession.reset(new FtpSession(_ios, _ip_address, port));
+	}
+	_dataSession.swap(t);
 }

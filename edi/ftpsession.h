@@ -2,11 +2,12 @@
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
 #include <string>
+#include <boost/asio/error.hpp>
 
 #define TIMEOUT boost::posix_time::seconds(30)
 
 using Callback = std::function<void()>;
-class FtpSession : boost::noncopyable, public std::enable_shared_from_this<FtpSession>
+class FtpSession : boost::noncopyable
 {
 public:
 	FtpSession(boost::asio::io_service& ios,
@@ -32,6 +33,7 @@ public:
 	boost::system::error_code Err() const;
 
 	boost::asio::streambuf* RecvBuf() const;
+	std::shared_ptr<boost::asio::streambuf> GetSharedRecvBuf();
 
 	void NoWait();
 	void Cancel();
@@ -56,34 +58,30 @@ template<typename P, typename N>
 inline void FtpSession::async_connect(P  cb, N  ecb)
 {
 	_deadline.expires_from_now(TIMEOUT);
-	auto t = shared_from_this();
-	_sock.async_connect(_ep, [t, cb, ecb](const boost::system::error_code& ec)
+	_sock.async_connect(_ep, [this, cb, ecb](const boost::system::error_code& ec)
 	{
 		if (ec)
 		{
-			t->_ec = ec;
+			_ec = ec;
 			ecb();
-			t->NoWait();
 			return;
 		}
 		cb();
 	});
-	_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this(), std::placeholders::_1));
+	_deadline.async_wait(std::bind(&FtpSession::check_deadline, this, std::placeholders::_1));
 }
 
 template<typename P, typename N>
 inline void FtpSession::async_readuntil(const std::string& delim, P  p, N  n)
 {
 	_deadline.expires_from_now(TIMEOUT);
-	auto t = shared_from_this();
 	boost::asio::async_read_until(_sock, *_rep, delim,
-		[t, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
+		[this, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	{
 		if (ec)
 		{
-			t->_ec = ec;
+			_ec = ec;
 			n();
-			t->NoWait();
 			return;
 		}
 		p();
@@ -94,16 +92,14 @@ template<typename P, typename N>
 inline void FtpSession::async_send(const std::string & str, P  p, N  n)
 {
 	_deadline.expires_from_now(TIMEOUT);
-	auto t = shared_from_this();
 	_req = std::move(str);
 	boost::asio::async_write(_sock, boost::asio::buffer(_req),
-		[t, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
+		[this, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	{
 		if (ec)
 		{
-			t->_ec = ec;
+			_ec = ec;
 			n();
-			t->NoWait();
 			return;
 		}
 		p();
@@ -115,15 +111,13 @@ template<typename P, typename N>
 inline void FtpSession::async_read(P  p, N  n)
 {
 	_deadline.expires_from_now(TIMEOUT);
-	auto t = shared_from_this();
 	boost::asio::async_read(_sock, *_rep,
-		[t, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
+		[this, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	{
 		if (ec)
 		{
-			t->_ec = ec;
+			_ec = ec;
 			n();
-			t->NoWait();
 			return;
 		}
 		p();
@@ -175,6 +169,12 @@ inline boost::asio::streambuf* FtpSession::RecvBuf() const
 	return _rep.get();
 }
 
+inline std::shared_ptr<boost::asio::streambuf> FtpSession::GetSharedRecvBuf()
+{
+	boost::asio::streambuf *p = _rep.release();
+	return std::shared_ptr<boost::asio::streambuf>(p);
+}
+
 inline void FtpSession::NoWait()
 {
 	_deadline.expires_at(boost::posix_time::pos_infin);
@@ -196,14 +196,17 @@ inline void FtpSession::Close()
 	_deadline.cancel(_ec);
 }
 
-inline void FtpSession::check_deadline(const boost::system::error_code &)
+inline void FtpSession::check_deadline(const boost::system::error_code &ec)
 {
+	if (ec == boost::asio::error::operation_aborted)
+	{
+		return;
+	}
 	if (_deadline.expires_at() <= boost::asio::deadline_timer::traits_type::now())
 	{
 		_sock.shutdown(boost::asio::socket_base::shutdown_both, _ec);
 		_sock.close(_ec);
-		NoWait();
 		return;
 	}
-	_deadline.async_wait(std::bind(&FtpSession::check_deadline, shared_from_this(), std::placeholders::_1));
+	_deadline.async_wait(std::bind(&FtpSession::check_deadline, this, std::placeholders::_1));
 }

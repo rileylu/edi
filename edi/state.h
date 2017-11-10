@@ -78,6 +78,12 @@ inline void State::parse_response(std::shared_ptr<FtpContext> ftpContext, const 
 			return;
 		}
 	}
+	else if (ftpContext->_res.find("530") == 0 && response == "230")
+	{
+		ftpContext->Close();
+		ftpContext.reset();
+		return;
+	}
 	else
 		ftpContext->ReBuild(*this);
 }
