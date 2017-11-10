@@ -643,7 +643,12 @@ inline void State::epsv(std::shared_ptr<FtpContext> ftpContext)
 					ftpContext->GetDataSession()->async_connect([this, ftpContext]
 					{
 						FileOP(ftpContext);
-					}, std::bind(&State::epsv, this, ftpContext));
+					}, [this, ftpContext] {
+						if (ftpContext->GetCtrlSession()->Err())
+							return;
+						else
+							epsv(ftpContext);
+					});
 				}
 				else
 					epsv(ftpContext);
@@ -684,8 +689,12 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 						ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext]
 						{
 							auto fun = [this, ftpContext] {
-								ftpContext->_current_file.clear();
-								epsv(ftpContext);
+								if (ftpContext->_fileList->Take(ftpContext->_current_file))
+									epsv(ftpContext);
+								else
+								{
+									logout(ftpContext);
+								}
 							};
 							parse_response(ftpContext, "226", fun);
 						}, std::bind(&State::session_err, this, ftpContext));
@@ -716,6 +725,10 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 							::fprintf(stdout, "Transfer File: %s completed.\n", newFileName.c_str());
 						});
 					}
+					else if (ftpContext->GetCtrlSession()->Err())
+						return;
+					else
+						epsv(ftpContext);
 				});
 			};
 			parse_response(ftpContext, "150", data);

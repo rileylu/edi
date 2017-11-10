@@ -29,13 +29,13 @@ void FtpContext::List()
 
 void FtpContext::ReBuild(State & s)
 {
-	_ctrlSession->Close();
+	_ctrlSession->Timer().cancel(_ctrlSession->Err());
 	_ctrlSession.reset(new FtpSession(_ios, _ip_address, _port));
 	if (_dataSession)
 	{
 		_dataSession->Close();
 		_dataSession.reset(nullptr);
 	}
-	_ctrlSession->Timer().expires_from_now(boost::posix_time::seconds(30));
+	_ctrlSession->Timer().expires_from_now(std::chrono::seconds(30));
 	_ctrlSession->Timer().async_wait(std::bind(&State::connect, &s, shared_from_this()));
 }
