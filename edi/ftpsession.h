@@ -25,8 +25,13 @@ public:
 	void async_send(const std::string& str, P p, N n);
 	template <typename P, typename N>
 	void async_read(P p, N n);
+
 	template <typename Handler>
-	bool transmit_file(std::string fn, Handler handler);
+	void transmit_file(boost::asio::windows::random_access_handle& hd, Handler handler);
+
+	template<typename Handler>
+	void download_file(boost::asio::windows::stream_handle& hd, Handler handler);
+
 
 	boost::asio::steady_timer& Timer();
 
@@ -44,7 +49,6 @@ private:
 
 private:
 	boost::asio::ip::tcp::socket _sock;
-	boost::asio::windows::random_access_handle _file;
 	boost::asio::ip::tcp::endpoint _ep;
 	std::unique_ptr<boost::asio::streambuf> _rep;
 	std::string _req;
@@ -127,29 +131,25 @@ inline void FtpSession::async_read(P  p, N  n)
 }
 
 template <typename Handler>
-inline bool FtpSession::transmit_file(std::string fn, Handler handler)
+inline void FtpSession::transmit_file(boost::asio::windows::random_access_handle& fn, Handler handler)
 {
-	boost::system::error_code ec;
-	_file.assign(::CreateFile(fn.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-		0), ec);
-	if (_file.is_open())
+	boost::asio::windows::overlapped_ptr overlapped(_sock.get_io_service(), handler);
+	BOOL ok = ::TransmitFile(_sock.native(), fn.native(), 0, 0, overlapped.get(), 0, 0);
+	DWORD last_error = ::GetLastError();
+	if (!ok && last_error != ERROR_IO_PENDING)
 	{
-		boost::asio::windows::overlapped_ptr overlapped(_sock.get_io_service(), handler);
-		BOOL ok = ::TransmitFile(_sock.native(), _file.native(), 0, 0, overlapped.get(), 0, 0);
-		DWORD last_error = ::GetLastError();
-		if (!ok && last_error != ERROR_IO_PENDING)
-		{
-			boost::system::error_code ec(last_error, boost::asio::error::get_system_category());
-			overlapped.complete(ec, 0);
-		}
-		else
-		{
-			overlapped.release();
-		}
-		return true;
+		boost::system::error_code ec(last_error, boost::asio::error::get_system_category());
+		overlapped.complete(ec, 0);
 	}
-	_file.close(_ec);
-	return false;
+	else
+	{
+		overlapped.release();
+	}
+}
+
+template<typename Handler>
+inline void FtpSession::download_file(boost::asio::windows::stream_handle& sh, Handler handler)
+{
 }
 
 inline boost::asio::steady_timer & FtpSession::Timer()

@@ -17,3 +17,7 @@ TEST(testcase, test2)
 {
 	EXPECT_EQ(28, Add(10, 18));
 }
+
+TEST(testcase, test3)
+{
+}
