@@ -64,6 +64,9 @@ private:
 	friend class NlstState;
 	std::unique_ptr<FtpSession> _ctrlSession;
 	std::unique_ptr<FtpSession> _dataSession;
+
+	boost::asio::windows::stream_handle _inFile;
+	boost::asio::windows::random_access_handle _outFile;
 };
 
 inline FtpSession* FtpContext::GetCtrlSession() const

@@ -176,7 +176,6 @@ inline std::shared_ptr<boost::asio::streambuf> FtpSession::GetSharedRecvBuf()
 inline void FtpSession::Cancel()
 {
 	_sock.cancel(_ec);
-	_file.cancel(_ec);
 	_deadline.cancel(_ec);
 }
 
@@ -188,7 +187,6 @@ inline void FtpSession::Close()
 		_sock.shutdown(_sock.shutdown_both, _ec);
 		_sock.close(_ec);
 	}
-	_file.close(_ec);
 	_deadline.cancel(_ec);
 }
 
