@@ -17,7 +17,7 @@ FtpContext::FtpContext(asio::io_service& ios, const std::string& ip, unsigned sh
     , _ctrlSession(nullptr)
     , _dataSession(nullptr)
 {
-    _ctrlSession = std::move(std::make_unique<FtpSession>(ios, ip, port));
+    _ctrlSession = std::make_unique<FtpSession>(ios, ip, port);
 }
 
 void FtpContext::SendFile()
@@ -43,6 +43,7 @@ void FtpContext::ReBuild(State& s)
         _dataSession->Close();
         _dataSession.reset(nullptr);
     }
-    _ctrlSession->Timer().expires_from_now(std::chrono::seconds(30));
+    boost::system::error_code ec;
+    _ctrlSession->Timer().expires_from_now(boost::posix_time::seconds(30),ec);
     _ctrlSession->Timer().async_wait(std::bind(&State::connect, &s, shared_from_this()));
 }

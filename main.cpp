@@ -36,8 +36,8 @@ int main()
 	}
 	in.close();
 
-	int concurrent = std::thread::hardware_concurrency() * 2;
-	for (int i = 0; i < concurrent; ++i)
+    unsigned concurrent = std::thread::hardware_concurrency() * 2;
+    for (unsigned i = 0; i < concurrent; ++i)
 	{
 		tds.emplace_back([&ios]
 		{

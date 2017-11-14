@@ -1,5 +1,7 @@
 #include "ftpsession.h"
 
+const boost::posix_time::seconds FtpSession::_timeout{ 30 };
+
 FtpSession::FtpSession(boost::asio::io_service& ios, const std::string& raw_ip_address, unsigned short port)
     : _sock(ios, boost::asio::ip::tcp::v4())
     , _ep(boost::asio::ip::address::from_string(raw_ip_address), port)

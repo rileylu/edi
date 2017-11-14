@@ -13,6 +13,7 @@ protected:
     };
     friend class FtpContext;
     State() = default;
+    virtual ~State()=default;
     virtual Type GetType() const = 0;
 
     template <typename Fun>
