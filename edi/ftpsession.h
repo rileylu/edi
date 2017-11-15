@@ -38,7 +38,7 @@ public:
 	boost::system::error_code& Err();
 
 	boost::asio::streambuf* RecvBuf() const;
-	std::shared_ptr<boost::asio::streambuf> GetSharedRecvBuf();
+	std::unique_ptr<boost::asio::streambuf> GetRecvBuf();
 
 	void Cancel();
 
@@ -60,7 +60,9 @@ private:
 template<typename P, typename N>
 inline void FtpSession::async_connect(P  cb, N  ecb)
 {
-	_deadline.expires_from_now(TIMEOUT);
+	_deadline.expires_from_now(TIMEOUT, _ec);
+	if (_ec)
+		return;
 	_sock.async_connect(_ep, [this, cb, ecb](const boost::system::error_code& ec)
 	{
 		if (ec)
@@ -77,7 +79,9 @@ inline void FtpSession::async_connect(P  cb, N  ecb)
 template<typename P, typename N>
 inline void FtpSession::async_readuntil(const std::string& delim, P  p, N  n)
 {
-	_deadline.expires_from_now(TIMEOUT);
+	_deadline.expires_from_now(TIMEOUT, _ec);
+	if (_ec)
+		return;
 	boost::asio::async_read_until(_sock, *_rep, delim,
 		[this, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	{
@@ -95,7 +99,9 @@ inline void FtpSession::async_readuntil(const std::string& delim, P  p, N  n)
 template<typename P, typename N>
 inline void FtpSession::async_send(const std::string & str, P  p, N  n)
 {
-	_deadline.expires_from_now(TIMEOUT);
+	_deadline.expires_from_now(TIMEOUT, _ec);
+	if (_ec)
+		return;
 	_req = std::move(str);
 	boost::asio::async_write(_sock, boost::asio::buffer(_req),
 		[this, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
@@ -115,7 +121,9 @@ inline void FtpSession::async_send(const std::string & str, P  p, N  n)
 template<typename P, typename N>
 inline void FtpSession::async_read(P  p, N  n)
 {
-	_deadline.expires_from_now(TIMEOUT);
+	_deadline.expires_from_now(TIMEOUT, _ec);
+	if (_ec)
+		return;
 	boost::asio::async_read(_sock, *_rep,
 		[this, p, n](const boost::system::error_code& ec, std::size_t bytes_transferred)
 	{
@@ -167,10 +175,9 @@ inline boost::asio::streambuf* FtpSession::RecvBuf() const
 	return _rep.get();
 }
 
-inline std::shared_ptr<boost::asio::streambuf> FtpSession::GetSharedRecvBuf()
+inline std::unique_ptr<boost::asio::streambuf> FtpSession::GetRecvBuf()
 {
-	boost::asio::streambuf *p = _rep.release();
-	return std::shared_ptr<boost::asio::streambuf>(p);
+	return std::move(_rep);
 }
 
 inline void FtpSession::Cancel()

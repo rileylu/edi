@@ -227,35 +227,29 @@ void State::retr(std::shared_ptr<FtpContext> ftpContext)
 						ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext]
 						{
 							auto fun = [this, ftpContext] {
-								auto buf = ftpContext->GetDataSession()->GetSharedRecvBuf();
+								std::shared_ptr<boost::asio::streambuf> buf(ftpContext->GetDataSession()->GetRecvBuf());
 								ftpContext->GetDataSession()->Close();
-								std::string newFileName = ftpContext->_current_file;
-								newFileName.erase(0, newFileName.find_last_of('/') + 1);
-								HANDLE hd = ::CreateFile(newFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_FLAG_OVERLAPPED, NULL);
-								if (hd == INVALID_HANDLE_VALUE)
+								boost::system::error_code e;
+								ftpContext->_inFile.assign(::CreateFile(ftpContext->_current_file.c_str(), GENERIC_WRITE, 0, 0, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0), e);
+								if (ftpContext->_inFile.is_open())
+								{
+									boost::asio::async_write(ftpContext->_inFile, *buf, [this, ftpContext, buf](const boost::system::error_code& ec, std::size_t bytes_transferred) {
+										boost::system::error_code e;
+										ftpContext->_inFile.close(e);
+										if (ec)
+										{
+											std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ec.value(),
+												ec.message().c_str());
+											::DeleteFile(ftpContext->_current_file.c_str());
+											return;
+										}
+									});
+								}
+								else
 								{
 									epsv(ftpContext);
-									::fprintf(stderr, "File: %s create failed. Error: %d\n", newFileName.c_str(), GetLastError());
 									return;
 								}
-								std::shared_ptr<boost::asio::windows::stream_handle> sh = std::make_shared<boost::asio::windows::stream_handle>(
-									ftpContext->GetIOS(), hd);
-								boost::asio::async_write(*sh, *buf,
-									[newFileName, ftpContext, this, sh, buf](
-										const boost::system::error_code& ec, std::size_t bytes_transferred)mutable
-								{
-									boost::system::error_code e;
-									sh->close(e);
-									sh.reset();
-									if (ec)
-									{
-										std::fprintf(stderr, "Line: %d ErrorCode: %d Message: %s\n", __LINE__, ec.value(),
-											ec.message().c_str());
-										::DeleteFile(newFileName.c_str());
-										return;
-									}
-									::fprintf(stdout, "Transfer File: %s completed.\n", newFileName.c_str());
-								});
 								rnfr(ftpContext);
 							};
 							parse_response(ftpContext, "226", fun);
@@ -282,39 +276,46 @@ void State::stor(std::shared_ptr<FtpContext> ftpContext)
 			return;
 		}
 	}
-	//if (!ftpContext->GetDataSession()->transmit_file(ftpContext->_current_file,
-	//	[this, ftpContext](const boost::system::error_code& ec, std::size_t bytes_transferred)
-	//{
-	//	ftpContext->GetDataSession()->Close();
-	//	if (ec)
-	//	{
-	//		abor(ftpContext);
-	//		return;
-	//	}
-	//	std::string cmd;
-	//	cmd += "STOR ";
-	//	cmd += "tmp/" + ftpContext->_current_file;
-	//	cmd += "\r\n";
-	//	ftpContext->GetCtrlSession()->async_send(cmd, [ftpContext, this]
-	//	{
-	//		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [ftpContext, this]
-	//		{
-	//			parse_response(ftpContext, "150", [this, ftpContext] {
-	//				ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
-	//					parse_response(ftpContext, "226", [this, ftpContext] {
-	//						rnfr(ftpContext);
-	//					});
-	//				}, std::bind(&State::session_err, this, ftpContext));
-	//			});
-	//		}, std::bind(&State::session_err, this, ftpContext));
-	//	}, std::bind(&State::session_err, this, ftpContext));
-	//}))
-	//{
-	//	::fprintf(stderr, "%s open error\n", ftpContext->_current_file.c_str());
-	//	ftpContext->_current_file.clear();
-	//	stor(ftpContext);
-	//	return;
-	//}
+
+	boost::system::error_code ec;
+	ftpContext->_outFile.assign(::CreateFile(ftpContext->_current_file.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0), ec);
+	if (ftpContext->_outFile.is_open())
+	{
+		ftpContext->GetDataSession()->transmit_file(ftpContext->_outFile, [this, ftpContext](const boost::system::error_code& ec, std::size_t bytes_transferred)
+		{
+			ftpContext->GetDataSession()->Close();
+			boost::system::error_code e;
+			ftpContext->_outFile.close(e);
+			if (ec)
+			{
+				abor(ftpContext);
+				return;
+			}
+			std::string cmd;
+			cmd += "STOR ";
+			cmd += "tmp/" + ftpContext->_current_file;
+			cmd += "\r\n";
+			ftpContext->GetCtrlSession()->async_send(cmd, [ftpContext, this]
+			{
+				ftpContext->GetCtrlSession()->async_readuntil("\r\n", [ftpContext, this]
+				{
+					parse_response(ftpContext, "150", [this, ftpContext] {
+						ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
+							parse_response(ftpContext, "226", [this, ftpContext] {
+								rnfr(ftpContext);
+							});
+						}, std::bind(&State::session_err, this, ftpContext));
+					});
+				}, std::bind(&State::session_err, this, ftpContext));
+			}, std::bind(&State::session_err, this, ftpContext));
+		});
+	}
+	else
+	{
+		::fprintf(stderr, "%s open error\n", ftpContext->_current_file.c_str());
+		ftpContext->_current_file.clear();
+		stor(ftpContext);
+	}
 }
 
 void State::rnfr(std::shared_ptr<FtpContext> ftpContext)
@@ -382,6 +383,9 @@ void State::logout(std::shared_ptr<FtpContext> ftpContext)
 		ftpContext->GetCtrlSession()->async_readuntil("\r\n", [this, ftpContext] {
 			parse_response(ftpContext, "221", [this, ftpContext]()mutable {
 				ftpContext->Close();
+				boost::system::error_code ec;
+				ftpContext->_inFile.close(ec);
+				ftpContext->_outFile.close(ec);
 				ftpContext.reset();
 			});
 		}, std::bind(&State::session_err, this, ftpContext));
