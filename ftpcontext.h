@@ -22,9 +22,12 @@ public:
 
     void List();
 
-    FtpSession* GetCtrlSession() const;
+    const std::unique_ptr<FtpSession>& GetCtrlSession() const;
 
-    FtpSession* GetDataSession() const;
+    const std::unique_ptr<FtpSession>& GetDataSession() const;
+
+    void ResetCtrlSession();
+    void ResetDataSession();
 
     std::string GetUser() const;
 
@@ -62,16 +65,29 @@ private:
     friend class NlstState;
     std::unique_ptr<FtpSession> _ctrlSession;
     std::unique_ptr<FtpSession> _dataSession;
+
+    boost::asio::posix::stream_descriptor _inFile;
+    boost::asio::posix::stream_descriptor _outFile;
+
 };
 
-inline FtpSession* FtpContext::GetCtrlSession() const
+inline const std::unique_ptr<FtpSession>& FtpContext::GetCtrlSession() const
 {
-    return _ctrlSession.get();
+    return _ctrlSession;
 }
 
-inline FtpSession* FtpContext::GetDataSession() const
+inline const std::unique_ptr<FtpSession>& FtpContext::GetDataSession() const
 {
-    return _dataSession.get();
+    return _dataSession;
+}
+
+inline void FtpContext::ResetCtrlSession()
+{
+    _ctrlSession.reset(nullptr);
+}
+inline void FtpContext::ResetDataSession()
+{
+    _dataSession.reset(nullptr);
 }
 
 inline std::string FtpContext::GetUser() const

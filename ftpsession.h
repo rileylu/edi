@@ -20,8 +20,8 @@ public:
     void async_readuntil(const std::string& delim, P p, N n);
     template <typename P, typename N>
     void async_send(const std::string& str, P p, N n);
-    template <typename P, typename N>
-    void async_read(P p, N n);
+    template<typename P,typename N>
+    void async_read(P p,N n);
 
     boost::asio::deadline_timer& Timer();
 
@@ -128,8 +128,7 @@ inline boost::asio::streambuf* FtpSession::RecvBuf() const
 
 inline std::shared_ptr<boost::asio::streambuf> FtpSession::GetSharedRecvBuf()
 {
-    boost::asio::streambuf* p = _rep.release();
-    return std::shared_ptr<boost::asio::streambuf>(p);
+    return std::move(_rep);
 }
 
 inline void FtpSession::Cancel()
