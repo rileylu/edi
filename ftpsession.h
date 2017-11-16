@@ -34,7 +34,6 @@ public:
     boost::asio::streambuf* RecvBuf();
     void RecvBuf(boost::asio::streambuf* buf);
     std::shared_ptr<boost::asio::streambuf> GetSharedRecvBuf();
-    void SetRecvBuf(std::unique_ptr<boost::asio::streambuf>);
 
     void Cancel();
 

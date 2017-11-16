@@ -15,54 +15,47 @@
 
 using namespace boost;
 
-int main()
-{
-	asio::io_service ios;
-	asio::io_service::work w(ios);
-	std::vector<std::thread> tds;
-	std::shared_ptr<threadsafe_queue<std::string>> fileList(new threadsafe_queue<std::string>());
+int main() {
+    asio::io_service ios;
+    asio::io_service::work w(ios);
+    std::vector<std::thread> tds;
+    std::shared_ptr<threadsafe_queue<std::string>> fileList(new threadsafe_queue<std::string>());
 
-	std::ifstream in("list.txt");
-	std::string line;
-	while (std::getline(in, line))
-	{
-		if (line.find(".xml") != line.npos)
-		{
-			std::size_t pos;
-			if ((pos = line.find('\r')) != line.npos)
-				line.erase(pos, 1);
-			fileList->push(std::move(line));
-		}
-	}
-	in.close();
+    std::ifstream in("list.txt");
+    std::string line;
+    while (std::getline(in, line)) {
+        if (line.find(".xml") != line.npos) {
+            std::size_t pos;
+            if ((pos = line.find('\r')) != line.npos)
+                line.erase(pos, 1);
+            fileList->push(std::move(line));
+        }
+    }
+    in.close();
 
     unsigned concurrent = std::thread::hardware_concurrency() * 2;
-    for (unsigned i = 0; i < concurrent; ++i)
-	{
-		tds.emplace_back([&ios]
-		{
-			ios.run();
-		});
-	}
+    for (unsigned i = 0; i < concurrent; ++i) {
+        tds.emplace_back([&ios] {
+            ios.run();
+        });
+    }
 
-	std::vector<std::shared_ptr<FtpContext>> ftpContexts;
-	for (int i = 0; i < 100; ++i)
-	{
+    std::vector<std::shared_ptr<FtpContext>> ftpContexts;
+    for (int i = 0; i < 100; ++i) {
 //        ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "124.207.27.34", 21, "gzftpqas01", "001testgz", "/OUT/stockout/", fileList));
-        ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "192.168.0.101", 21, "lmz", "gklmz2013", "/", fileList));
-		//ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "127.0.0.1", 21, "lmz", "gklmz2013"));
-	}
+        ftpContexts.emplace_back(
+                std::make_shared<FtpContext>(ios, "192.168.0.101", 21, "lmz", "gklmz2013", "/", fileList));
+        //ftpContexts.emplace_back(std::make_shared<FtpContext>(ios, "127.0.0.1", 21, "lmz", "gklmz2013"));
+    }
 
-	for (auto& p : ftpContexts)
-	{
-		//p->SendFile(fileList);
+    for (auto &p : ftpContexts) {
+        //p->SendFile(fileList);
 //        p->RecvFile();
         p->SendFile();
-	}
-	for (auto& p : tds)
-	{
-		if (p.joinable())
-			p.join();
-	}
-	return 0;
+    }
+    for (auto &p : tds) {
+        if (p.joinable())
+            p.join();
+    }
+    return 0;
 }
