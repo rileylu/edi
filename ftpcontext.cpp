@@ -16,8 +16,6 @@ FtpContext::FtpContext(asio::io_service& ios, const std::string& ip, unsigned sh
     , _fileList(fileList)
     , _ctrlSession(nullptr)
     , _dataSession(nullptr)
-    ,_inFile(ios)
-    ,_outFile(ios)
 {
     _ctrlSession = std::make_unique<FtpSession>(ios, ip, port);
 }

@@ -56,8 +56,8 @@ int main()
 	for (auto& p : ftpContexts)
 	{
 		//p->SendFile(fileList);
-        p->RecvFile();
-//		p->SendFile();
+//        p->RecvFile();
+        p->SendFile();
 	}
 	for (auto& p : tds)
 	{

@@ -23,12 +23,18 @@ public:
     template<typename P,typename N>
     void async_read(P p,N n);
 
+    template<typename P,typename N>
+    void async_send(P p,N n);
+
     boost::asio::deadline_timer& Timer();
 
     boost::system::error_code& Err();
 
-    boost::asio::streambuf* RecvBuf() const;
+    const boost::asio::streambuf* RecvBuf() const;
+    boost::asio::streambuf* RecvBuf();
+    void RecvBuf(boost::asio::streambuf* buf);
     std::shared_ptr<boost::asio::streambuf> GetSharedRecvBuf();
+    void SetRecvBuf(std::unique_ptr<boost::asio::streambuf>);
 
     void Cancel();
 
@@ -43,9 +49,25 @@ private:
     std::unique_ptr<boost::asio::streambuf> _rep;
     std::string _req;
     boost::system::error_code _ec;
-    boost::asio::deadline_timer _deadline;
+    mutable boost::asio::deadline_timer _deadline;
     static const boost::posix_time::seconds _timeout;
 };
+
+template<typename P, typename N>
+inline void FtpSession::async_send(P p, N n)
+{
+    _deadline.expires_from_now(_timeout,_ec);
+    boost::asio::async_write(_sock,*_rep,[this,p,n](const boost::system::error_code& ec,std::size_t byte_transferred){
+        if(ec)
+        {
+            _ec=ec;
+            n();
+            return;
+        }
+        p();
+    });
+    _deadline.async_wait(std::bind(&FtpSession::check_deadline,this,std::placeholders::_1));
+}
 
 template <typename P, typename N>
 inline void FtpSession::async_connect(P cb, N ecb)
@@ -121,7 +143,17 @@ inline boost::system::error_code& FtpSession::Err()
     return _ec;
 }
 
-inline boost::asio::streambuf* FtpSession::RecvBuf() const
+inline boost::asio::streambuf *FtpSession::RecvBuf()
+{
+    return _rep.get();
+}
+
+inline void FtpSession::RecvBuf(boost::asio::streambuf *buf)
+{
+    _rep.reset(buf);
+}
+
+inline const boost::asio::streambuf* FtpSession::RecvBuf() const
 {
     return _rep.get();
 }

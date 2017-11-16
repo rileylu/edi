@@ -66,9 +66,6 @@ private:
     std::unique_ptr<FtpSession> _ctrlSession;
     std::unique_ptr<FtpSession> _dataSession;
 
-    boost::asio::posix::stream_descriptor _inFile;
-    boost::asio::posix::stream_descriptor _outFile;
-
 };
 
 inline const std::unique_ptr<FtpSession>& FtpContext::GetCtrlSession() const
