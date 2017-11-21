@@ -35,22 +35,26 @@ void STSocket::sock_destructor(void *args) {
 }
 
 ssize_t STSocket::read(void *data, size_t len) {
-    size_t nleft = len;
-    ssize_t nread;
-    char *ptr = reinterpret_cast<char *>(data);
-    while (nleft > 0) {
-        if ((nread = st_read(sock_, ptr, nleft, timeout_)) < 0) {
-            if (errno == EINTR)
-                nread = 0;
-            else
-                //return -1;
-                throw std::exception();
-        } else if (nread == 0)
-            break;
-        nleft -= nread;
-        ptr += nread;
-    }
-    return len - nleft;
+//    size_t nleft = len;
+//    ssize_t nread;
+//    char *ptr = reinterpret_cast<char *>(data);
+//    while (nleft > 0) {
+//        if ((nread = st_read(sock_, ptr, nleft, timeout_)) < 0) {
+//            if (errno == EINTR)
+//                nread = 0;
+//            else
+//                //return -1;
+//                throw std::exception();
+//        } else if (nread == 0)
+//            break;
+//        nleft -= nread;
+//        ptr += nread;
+//    }
+//    return len - nleft;
+    ssize_t nread=st_read(sock_,data,len,timeout_);
+    if(nread<0)
+        throw std::exception();
+    return nread;
 }
 
 ssize_t STSocket::write(const void *data, size_t len) {

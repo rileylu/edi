@@ -1,3 +1,4 @@
+#include <istream>
 #include "stsocketbuf.hpp"
 #include "stsocket.hpp"
 #include "utilities.hpp"
@@ -15,6 +16,11 @@ void *work(void*)
         std::string cmd{"USER lmz\r\nPASS gklmz2013\r\n"};
         os.write(cmd.c_str(), cmd.size());
         os.flush();
+        STSocketBuf inBuf(sock);
+        std::string line;
+        std::istream is(&inBuf);
+        while(std::getline(is,line))
+            fprintf(stdout,"%s\n",line.c_str());
     }
     catch (...)
     {

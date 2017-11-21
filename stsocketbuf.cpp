@@ -55,3 +55,26 @@ int STSocketBuf::sync() {
         return -1;
     return 1;
 }
+
+int STSocketBuf::underflow() {
+    if (gptr() < egptr()) {
+        return traits_type::to_int_type(*gptr());
+    }
+    int numPutback;
+    numPutback = gptr() - eback();
+    if (numPutback > 4) {
+        numPutback = 4;
+    }
+    std::memmove(buf_.data() + (4 - numPutback), gptr() - numPutback,
+                 numPutback);
+    int num;
+//    num = read (0, buf_.data()+4, BUFSIZE-4);
+    num = sock_.read(buf_.data() + 4, BUFSIZE - 4);
+    if (num <= 0) {
+        return EOF;
+    }
+    setg(buf_.data() + (4 - numPutback),
+         buf_.data() + 4,
+         buf_.data() + 4 + num);
+    return traits_type::to_int_type(*gptr());
+}
