@@ -17,12 +17,13 @@ class STSocket;
 
 class STSocketBuf : public std::streambuf {
 public:
-    const static std::size_t BUFSIZE = 512;
+    const static std::size_t putback_sz=4;
+    const static std::size_t BUFSIZE = 1024+putback_sz+1;
 
     STSocketBuf(STSocket &sock)
             : sock_(sock), buf_(BUFSIZE) {
-        setp(buf_.data(), buf_.data() + (BUFSIZE - 1));
-        setg(buf_.data()+4,buf_.data()+4,buf_.data()+4);
+        setp(buf_.data()+putback_sz, buf_.data() + (BUFSIZE - 1));
+        setg(buf_.data()+putback_sz,buf_.data()+putback_sz,buf_.data()+putback_sz);
     }
 
     virtual ~STSocketBuf();

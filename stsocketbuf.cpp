@@ -20,7 +20,7 @@ std::streamsize STSocketBuf::xsputn(const char_type *s, std::streamsize n) {
         if (pptr() == epptr()) {
             if (flushbuffer() == EOF)
                 return EOF;
-            setp(buf_.data(), buf_.data() + BUFSIZE - 1);
+            setp(buf_.data()+putback_sz, buf_.data() + BUFSIZE - 1);
         }
         sptr += bytes_moved;
         nleft -= bytes_moved;
@@ -40,7 +40,7 @@ STSocketBuf::int_type STSocketBuf::overflow(int_type c) {
 
 int STSocketBuf::flushbuffer() {
     int num = pptr() - pbase();
-    if (sock_.write(buf_.data(), num) != num)
+    if (sock_.write(buf_.data()+putback_sz, num) != num)
         return EOF;
     pbump(-num);
     return num;
