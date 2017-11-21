@@ -6,6 +6,8 @@
 //  Copyright © 2017 com.oocl. All rights reserved.
 //
 
+#include <cstdio>
+#include <exception>
 #include "stsocket.hpp"
 
 STSocket::~STSocket() {
@@ -36,7 +38,8 @@ ssize_t STSocket::read(void *data, size_t len) {
             if(errno==EINTR)
                 nread=0;
             else
-                return -1;
+                //return -1;
+                throw std::exception();
         }
         else if(nread==0)
             break;
@@ -58,7 +61,8 @@ ssize_t STSocket::write(const void *data, size_t len) {
             if(nwriten<0 && errno==EINTR)
                 nwriten=0;
             else
-                return -1;
+//                return -1;
+                throw std::exception();
         }
         nleft-=nwriten;
         ptr+=nwriten;
@@ -67,7 +71,10 @@ ssize_t STSocket::write(const void *data, size_t len) {
 }
 
 int STSocket::connect(struct sockaddr *addr, int addrlen) {
-    return st_connect(sock_, addr, addrlen, timeout_);
+    int res=st_connect(sock_,addr,addrlen,timeout_);
+    if(res<0)
+        throw std::exception();
+    return res;
 }
 
 
