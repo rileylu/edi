@@ -1,18 +1,30 @@
 #include <istream>
+#include <fstream>
 #include "stsocketbuf.hpp"
 #include "stsocket.hpp"
 #include "ftpclient.h"
 
+
 void *work(void*)
 {
-    FTPClient cli("172.16.120.128","21","lmz","gklmz2013");
+//    FTPClient cli("172.16.120.128","21","lmz","gklmz2013");
+    std::vector<std::string> fl;
+    FTPClient cli("124.207.27.34","21","gzftpqas01","001testgz");
     cli.open();
     cli.login();
-    cli.change_dir("tmp");
+    cli.change_dir("/OUT/stockout/");
     std::istream& is(cli.begin_list("."));
     std::string fn;
-    while(std::getline(is,fn))
-        ::fprintf(stdout,"%s\n",fn.c_str());
+    std::size_t pos;
+    while(getline(is,fn))
+    {
+        if(fn.find(".xml")!=fn.npos)
+        {
+            if ((pos = fn.find('\r')) != fn.npos)
+                fn.erase(pos, 1);
+            fl.push_back(std::move(fn));
+        }
+    }
     cli.end_list();
     cli.logout();
     return nullptr;
