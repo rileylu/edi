@@ -25,34 +25,18 @@ STSocket::STSocket(st_utime_t timeout)
     sock_ = st_netfd_open_socket(native_sock_);
     if (sock_ == nullptr)
         throw;
-    st_netfd_setspecific(sock_, &native_sock_,&STSocket::sock_destructor);
+    st_netfd_setspecific(sock_, &native_sock_, &STSocket::sock_destructor);
 }
 
 void STSocket::sock_destructor(void *args) {
-    int *fd= reinterpret_cast<int*>(args);
+    int *fd = reinterpret_cast<int *>(args);
     if (::shutdown(*fd, SHUT_RDWR) < 0)
         throw std::exception();
 }
 
 ssize_t STSocket::read(void *data, size_t len) {
-//    size_t nleft = len;
-//    ssize_t nread;
-//    char *ptr = reinterpret_cast<char *>(data);
-//    while (nleft > 0) {
-//        if ((nread = st_read(sock_, ptr, nleft, timeout_)) < 0) {
-//            if (errno == EINTR)
-//                nread = 0;
-//            else
-//                //return -1;
-//                throw std::exception();
-//        } else if (nread == 0)
-//            break;
-//        nleft -= nread;
-//        ptr += nread;
-//    }
-//    return len - nleft;
-    ssize_t nread=st_read(sock_,data,len,timeout_);
-    if(nread<0)
+    ssize_t nread = st_read(sock_, data, len, timeout_);
+    if (nread < 0)
         throw std::exception();
     return nread;
 }
@@ -67,7 +51,6 @@ ssize_t STSocket::write(const void *data, size_t len) {
             if (nwriten < 0 && errno == EINTR)
                 nwriten = 0;
             else
-//                return -1;
                 throw std::exception();
         }
         nleft -= nwriten;

@@ -20,7 +20,7 @@ std::streamsize STSocketBuf::xsputn(const char_type *s, std::streamsize n) {
         if (pptr() == epptr()) {
             if (flushbuffer() == EOF)
                 return EOF;
-            setp(buf_.data()+putback_sz, buf_.data() + BUFSIZE - 1);
+            setp(buf_.data() + putback_sz, buf_.data() + BUFSIZE - 1);
         }
         sptr += bytes_moved;
         nleft -= bytes_moved;
@@ -40,7 +40,7 @@ STSocketBuf::int_type STSocketBuf::overflow(int_type c) {
 
 int STSocketBuf::flushbuffer() {
     int num = pptr() - pbase();
-    if (sock_.write(buf_.data()+putback_sz, num) != num)
+    if (sock_.write(buf_.data() + putback_sz, num) != num)
         return EOF;
     pbump(-num);
     return num;
@@ -62,19 +62,18 @@ int STSocketBuf::underflow() {
     }
     int numPutback;
     numPutback = gptr() - eback();
-    if (numPutback > 4) {
-        numPutback = 4;
+    if (numPutback > putback_sz) {
+        numPutback = putback_sz;
     }
-    std::memmove(buf_.data() + (4 - numPutback), gptr() - numPutback,
+    std::memmove(buf_.data() + (putback_sz - numPutback), gptr() - numPutback,
                  numPutback);
     int num;
-//    num = read (0, buf_.data()+4, BUFSIZE-4);
-    num = sock_.read(buf_.data() + 4, BUFSIZE - 4);
+    num = sock_.read(buf_.data() + putback_sz, BUFSIZE - putback_sz);
     if (num <= 0) {
         return EOF;
     }
-    setg(buf_.data() + (4 - numPutback),
-         buf_.data() + 4,
-         buf_.data() + 4 + num);
+    setg(buf_.data() + (putback_sz - numPutback),
+         buf_.data() + putback_sz,
+         buf_.data() + putback_sz + num);
     return traits_type::to_int_type(*gptr());
 }

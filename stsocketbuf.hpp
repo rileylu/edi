@@ -17,13 +17,13 @@ class STSocket;
 
 class STSocketBuf : public std::streambuf {
 public:
-    const static std::size_t putback_sz=4;
-    const static std::size_t BUFSIZE = 1024+putback_sz+1;
+    const static std::size_t putback_sz = 4;
+    const static std::size_t BUFSIZE = 1024 + putback_sz + 1;
 
     STSocketBuf(STSocket &sock)
             : sock_(sock), buf_(BUFSIZE) {
-        setp(buf_.data()+putback_sz, buf_.data() + (BUFSIZE - 1));
-        setg(buf_.data()+putback_sz,buf_.data()+putback_sz,buf_.data()+putback_sz);
+        setp(buf_.data() + putback_sz, buf_.data() + (BUFSIZE - 1));
+        setg(buf_.data() + putback_sz, buf_.data() + putback_sz, buf_.data() + putback_sz);
     }
 
     virtual ~STSocketBuf();
@@ -33,7 +33,7 @@ protected:
 
     std::streamsize xsputn(const char_type *__s, std::streamsize __n) override;
 
-    int_type underflow() override ;
+    int_type underflow() override;
 
     int flushbuffer();
 
