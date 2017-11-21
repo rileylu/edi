@@ -7,6 +7,6 @@ INCLUDE_DIRECTORIES(/Users/lmz/Downloads/st-1.9/DARWIN_17.2.0_DBG
 LINK_DIRECTORIES(/Users/lmz/Downloads/st-1.9/DARWIN_17.2.0_DBG
         /usr/local/lib)
 
-set(SOURCE_FILES main.cpp stsocket.cpp stsocketbuf.cpp utilities.hpp)
+set(SOURCE_FILES main.cpp stsocket.cpp stsocketbuf.cpp utilities.hpp session.cpp session.h ftpclient.cpp ftpclient.h)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} st jemalloc)

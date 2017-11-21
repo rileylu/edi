@@ -10,7 +10,6 @@
 #define stsocketbuf_hpp
 
 #include <streambuf>
-#include <ostream>
 #include <vector>
 
 class STSocket;

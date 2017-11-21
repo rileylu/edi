@@ -17,8 +17,7 @@ STSocket::~STSocket() {
 }
 
 
-STSocket::STSocket(st_utime_t timeout)
-        : timeout_(timeout) {
+STSocket::STSocket() {
     native_sock_ = ::socket(AF_INET, SOCK_STREAM, 0);
     if (native_sock_ < 0)
         throw;
