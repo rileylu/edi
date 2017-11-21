@@ -21,6 +21,7 @@ public:
     STSocket(const STSocket&)=delete;
     STSocket& operator=(const STSocket &)=delete;
 private:
+    static void sock_destructor(void *args);
     int native_sock_;
     ::st_netfd_t sock_;
     st_utime_t timeout_;
@@ -29,4 +30,6 @@ inline st_utime_t STSocket::get_timeout() const
 {
     return timeout_;
 }
+
+
 #endif /* stsocket_hpp */

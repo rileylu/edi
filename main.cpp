@@ -12,8 +12,9 @@ void *work(void*)
         sock.connect(servaddr.ai_addr, servaddr.ai_addrlen);
         STSocketBuf buf(sock);
         std::ostream os(&buf);
-        std::string cmd{"USER lmz\r\n"};
+        std::string cmd{"USER lmz\r\nPASS gklmz2013\r\n"};
         os.write(cmd.c_str(), cmd.size());
+        os.flush();
     }
     catch (...)
     {

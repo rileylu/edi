@@ -12,21 +12,31 @@
 #include <streambuf>
 #include <ostream>
 #include <vector>
+
 class STSocket;
 
-class STSocketBuf:public std::streambuf
-{
+class STSocketBuf : public std::streambuf {
 public:
-    const static std::size_t BUFSIZE=512;
-    STSocketBuf(STSocket& sock)
-    :sock_(sock),buf_(BUFSIZE)
-    {}
+    const static std::size_t BUFSIZE = 512;
+
+    STSocketBuf(STSocket &sock)
+            : sock_(sock), buf_(BUFSIZE) {
+        setp(buf_.data(), buf_.data() + (BUFSIZE - 1));
+    }
+
+    virtual ~STSocketBuf();
 
 protected:
     virtual int_type overflow(int_type __c = traits_type::eof()) override;
-    virtual std::streamsize xsputn(const char_type* __s, std::streamsize __n) override;
+
+    virtual std::streamsize xsputn(const char_type *__s, std::streamsize __n) override;
+
+    int flushbuffer();
+
+    int sync() override;
+
 private:
-    STSocket& sock_;
+    STSocket &sock_;
     std::vector<char> buf_;
 };
 
