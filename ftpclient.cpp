@@ -20,6 +20,8 @@ void FTPClient::open() {
     {
         std::getline(is,line);
     }while(line[3]=='-');
+    if(line.find("220")!=0)
+        throw std::exception();
 }
 
 void FTPClient::login() {
@@ -33,5 +35,13 @@ void FTPClient::login() {
     std::ostream& os=ftpCtrlSession_->write_data();
     os.write(cmd.c_str(),cmd.size());
     std::istream& is=ftpCtrlSession_->read_data();
+    cmd.clear();
+    std::getline(is,cmd);
+    if(cmd.find("331")!=0)
+        throw std::exception();
+    std::getline(is,cmd);
+    if(cmd.find("220")!=0)
+        throw std::exception();
+
 
 }

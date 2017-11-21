@@ -15,16 +15,25 @@ class Session;
 
 class FTPClient {
 public:
-    const static int unit=1000000;
-    FTPClient(const std::string &host, const std::string &port, const std::string &user, const std::string &pass,st_utime_t timeout=30*unit);
-    ~FTPClient()= default;
+    const static int unit = 1000000;
+
+    FTPClient(const std::string &host, const std::string &port, const std::string &user, const std::string &pass,
+              st_utime_t timeout = 30 * unit);
+
+    ~FTPClient() = default;
 
     void open();
-    void login();
-    std::istream& get_list(const std::string& dir);
-    std::istream& download_file(const std::string& fn);
-    std::ostream& upload_file(const std::string& fn);
 
+    void login();
+
+    std::istream &get_list(const std::string &dir);
+
+    std::istream &download_file(const std::string &fn);
+
+    std::ostream &upload_file(const std::string &fn);
+
+private:
+    void parse_response();
 
 private:
     std::string host_;
