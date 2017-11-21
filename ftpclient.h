@@ -10,8 +10,8 @@
 #include <ostream>
 #include <memory>
 #include <st.h>
-
-class Session;
+#include "sessionstream.h"
+#include "session.h"
 
 class FTPClient {
 public:
@@ -26,14 +26,26 @@ public:
 
     void login();
 
-    std::istream &get_list(const std::string &dir);
+    void logout();
 
-    std::istream &download_file(const std::string &fn);
+    void move_file(const std::string &fr, const std::string &to);
 
-    std::ostream &upload_file(const std::string &fn);
+    void change_dir(const std::string& dir);
+
+    std::istream& begin_download(const std::string& fn);
+    void end_download();
+
+    std::istream& begin_list(const std::string& dir);
+    void end_list();
+
+    std::ostream& begin_upload(const std::string& fn);
+    void end_upload();
+
+
 
 private:
-    void parse_response();
+    void parse_response(const std::string &res,const std::string& code);
+    void prepare_datasession();
 
 private:
     std::string host_;
@@ -42,7 +54,9 @@ private:
     std::string pass_;
     st_utime_t timeout_;
     std::unique_ptr<Session> ftpCtrlSession_;
+    std::unique_ptr<SessionStream> ctrlStream_;
     std::unique_ptr<Session> ftpDataSession_;
+    std::unique_ptr<SessionStream> dataStream_;
 };
 
 

@@ -29,8 +29,7 @@ STSocket::STSocket() {
 
 void STSocket::sock_destructor(void *args) {
     int *fd = reinterpret_cast<int *>(args);
-    if (::shutdown(*fd, SHUT_RDWR) < 0)
-        throw std::exception();
+    ::shutdown(*fd, SHUT_RDWR);
 }
 
 ssize_t STSocket::read(void *data, size_t len) {

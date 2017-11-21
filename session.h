@@ -21,22 +21,26 @@ public:
 
     void open();
 
-    std::istream &read_data();
+    STSocketBuf *get_read_buf();
 
-    std::ostream &write_data();
+    STSocketBuf *get_write_buf();
 
 private:
-
     std::string host_;
     std::string port_;
-
     STSocket stSocket_;
     STSocketBuf inbuf_;
-    std::istream is_;
     STSocketBuf outbuf_;
-    std::ostream os_;
     st_utime_t timeout_;
 };
+
+inline STSocketBuf *Session::get_read_buf() {
+    return &inbuf_;
+}
+
+inline STSocketBuf *Session::get_write_buf() {
+    return &outbuf_;
+}
 
 
 #endif //EDI_SESSION_H
