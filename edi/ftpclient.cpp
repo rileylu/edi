@@ -11,7 +11,7 @@ FTPClient::FTPClient(const std::string &host, const std::string &port, const std
         : host_(host), port_(port), user_(user), pass_(pass), timeout_(timeout), ftpCtrlSession_(nullptr),
           ftpDataSession_(nullptr) {
     ftpCtrlSession_.reset(new Session(host_, port_, timeout_));
-    ctrlStream_.reset(new SessionStream(ftpCtrlSession_->get_read_buf(),ftpCtrlSession_->get_write_buf()));
+              ctrlStream_.reset(new BufferedIOStream(ftpCtrlSession_->get_read_buf(),ftpCtrlSession_->get_write_buf()));
 }
 
 void FTPClient::open() {
@@ -135,7 +135,7 @@ void FTPClient::prepare_datasession() {
     {
         ftpDataSession_.reset(new Session(host_,results[1],timeout_));
         ftpDataSession_->open();
-        dataStream_.reset(new SessionStream(ftpDataSession_->get_read_buf(),ftpDataSession_->get_write_buf()));
+        dataStream_.reset(new BufferedIOStream(ftpDataSession_->get_read_buf(),ftpDataSession_->get_write_buf()));
     }
     else
         throw std::exception();

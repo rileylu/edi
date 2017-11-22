@@ -5,8 +5,8 @@
 #ifndef EDI_SESSION_H
 #define EDI_SESSION_H
 
-#include "stsocket.hpp"
-#include "stsocketbuf.hpp"
+#include "socketstream.hpp"
+#include "ststreambuf.hpp"
 #include <string>
 #include <istream>
 #include <ostream>
@@ -21,24 +21,24 @@ public:
 
     void open();
 
-    STSocketBuf *get_read_buf();
+    STStreamBuf *get_read_buf();
 
-    STSocketBuf *get_write_buf();
+    STStreamBuf *get_write_buf();
 
 private:
     std::string host_;
     std::string port_;
-    STSocket stSocket_;
-    STSocketBuf inbuf_;
-    STSocketBuf outbuf_;
+    SocketStream stSocket_;
+    STStreamBuf inbuf_;
+    STStreamBuf outbuf_;
     st_utime_t timeout_;
 };
 
-inline STSocketBuf *Session::get_read_buf() {
+inline STStreamBuf *Session::get_read_buf() {
     return &inbuf_;
 }
 
-inline STSocketBuf *Session::get_write_buf() {
+inline STStreamBuf *Session::get_write_buf() {
     return &outbuf_;
 }
 

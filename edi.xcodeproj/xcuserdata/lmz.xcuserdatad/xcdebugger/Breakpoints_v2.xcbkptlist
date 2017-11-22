@@ -6,49 +6,17 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            shouldBeEnabled = "No"
+            shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "edi/main.cpp"
-            timestampString = "533006612.399048"
+            timestampString = "533025843.451368"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "35"
-            endingLineNumber = "35"
-            landmarkName = "work(void*)"
+            startingLineNumber = "54"
+            endingLineNumber = "54"
+            landmarkName = "main()"
             landmarkType = "9">
-            <Locations>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "work(void*)"
-                  moduleName = "edi"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/Data/Git/edi/edi/main.cpp"
-                  timestampString = "533006612.772944"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "36"
-                  endingLineNumber = "36"
-                  offsetFromSymbolStart = "3338">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "work(void*)"
-                  moduleName = "edi"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Volumes/Data/Git/edi/edi/main.cpp"
-                  timestampString = "533006612.7751"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "36"
-                  endingLineNumber = "36"
-                  offsetFromSymbolStart = "4403">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
