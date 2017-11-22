@@ -7,9 +7,3 @@
 //
 
 #include "istream.hpp"
-
-
-IStream::IStream(st_utime_t timeout)
-:timeout_(timeout)
-{
-}

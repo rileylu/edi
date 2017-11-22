@@ -17,7 +17,6 @@ class STStreamBuf:Noncopyable,public std::streambuf
 {
 public:
     const static std::size_t BUFSIZE = 1024;
-    
     STStreamBuf(IStream &is)
     : istream_(is),buf_{0}{
         setp(buf_.data(), buf_.data() + (BUFSIZE - 1));
@@ -28,9 +27,7 @@ public:
     
 protected:
     int_type overflow(int_type __c = traits_type::eof()) override;
-    
-    std::streamsize xsputn(const char_type *__s, std::streamsize __n) override;
-    
+
     int_type underflow() override;
     
     int flushbuffer();

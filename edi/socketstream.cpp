@@ -9,20 +9,12 @@
 #include "socketstream.hpp"
 #include <exception>
 
-int SocketStream::connect(sockaddr *addr, int addrlen) {
-    int res = st_connect(des_, addr, addrlen, timeout_);
-    if (res < 0)
-        throw std::exception();
-    return res;
-}
-
-
-ssize_t SocketStream::write(const void *buf, size_t len) { 
+ssize_t SocketStream::write(const void *buf, size_t len,st_utime_t timeout) {
     size_t nleft = len;
     ssize_t nwriten = 0;
     const char *ptr = reinterpret_cast<const char *>(buf);
     while (nleft > 0) {
-        nwriten = st_write(des_, ptr, nleft, timeout_);
+        nwriten = st_write(des_, ptr, nleft, timeout);
         if (nwriten <= 0) {
             if (nwriten < 0 && errno == EINTR)
                 nwriten = 0;
@@ -35,9 +27,8 @@ ssize_t SocketStream::write(const void *buf, size_t len) {
     return len;
 }
 
-
-ssize_t SocketStream::read(void *buf, size_t len) {
-    ssize_t nread = st_read(des_, buf, len, timeout_);
+ssize_t SocketStream::read(void *buf, size_t len,st_utime_t timeout) {
+    ssize_t nread = st_read(des_, buf, len, timeout);
     if (nread < 0)
         throw std::exception();
     return nread;

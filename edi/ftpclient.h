@@ -10,8 +10,7 @@
 #include <ostream>
 #include <memory>
 #include <st.h>
-#include "bufferediostream.h"
-#include "session.h"
+#include "netsession.hpp"
 
 class FTPClient {
 public:
@@ -53,10 +52,9 @@ private:
     std::string user_;
     std::string pass_;
     st_utime_t timeout_;
-    std::unique_ptr<Session> ftpCtrlSession_;
-    std::unique_ptr<BufferedIOStream> ctrlStream_;
-    std::unique_ptr<Session> ftpDataSession_;
-    std::unique_ptr<BufferedIOStream> dataStream_;
+    
+    std::unique_ptr<NetSession> ctrlSession_;
+    std::unique_ptr<NetSession> dataSession_;
 };
 
 

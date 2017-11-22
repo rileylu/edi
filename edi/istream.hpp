@@ -17,23 +17,10 @@ class IStream
 {
 public:
     virtual ~IStream()=default;
-    virtual ssize_t read(void *buf,size_t len)=0;
-    virtual ssize_t write(const void* buf,size_t len)=0;
-    void set_timeout(st_utime_t timeout);
-    st_utime_t get_timeout() const ;
+    virtual ssize_t read(void *buf,size_t len, st_utime_t timeout=60*UNIT)=0;
+    virtual ssize_t write(const void* buf,size_t len,st_utime_t timeout=60*UNIT)=0;
+    virtual st_netfd_t get_des() const=0;
 protected:
-    IStream(st_utime_t timeout=60*UNIT);
-    st_utime_t timeout_;
+    IStream()=default;
 };
-
-inline void IStream::set_timeout(st_utime_t timeout)
-{
-    timeout_=timeout;
-}
-inline st_utime_t IStream::get_timeout() const
-{
-    return timeout_;
-}
-
-
 #endif /* istream_hpp */

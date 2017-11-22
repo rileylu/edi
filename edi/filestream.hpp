@@ -19,11 +19,21 @@ class FileStream: public IStream,Noncopyable
 public:
     FileStream();
     virtual ~FileStream();
-    ssize_t read(void *buf, size_t len) override;
-    ssize_t write(const void *buf, size_t len) override;
-    void open(const char* fn,int flag,int mode);
+    ssize_t read(void *buf, size_t len,st_utime_t timeout=60*UNIT) override;
+    ssize_t write(const void *buf, size_t len,st_utime_t timeout=60*UNIT) override;
+    st_netfd_t get_des() const override;
+    void set_des(st_netfd_t des);
 private:
     st_netfd_t des_;
 };
+
+inline st_netfd_t FileStream::get_des() const
+{
+    return des_;
+}
+inline void FileStream::set_des(st_netfd_t des)
+{
+    des_=des;
+}
 
 #endif /* filestream_hpp */

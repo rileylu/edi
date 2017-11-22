@@ -8,11 +8,11 @@
 
 #include "filestream.hpp"
 #include <exception>
-ssize_t FileStream::write(const void *buf, size_t len) {
+ssize_t FileStream::write(const void *buf, size_t len,st_utime_t timeout) {
     ssize_t n=0;
     do
     {
-        n=st_write(des_, buf, len, timeout_);
+        n=st_write(des_, buf, len, timeout);
     }while(n<0&&errno==EINTR);
     if(n<len)
         throw std::exception();
@@ -20,11 +20,11 @@ ssize_t FileStream::write(const void *buf, size_t len) {
 }
 
 
-ssize_t FileStream::read(void *buf, size_t len) {
+ssize_t FileStream::read(void *buf, size_t len,st_utime_t timeout) {
     ssize_t n=0;
     do
     {
-        n=st_read(des_, buf, len, timeout_);
+        n=st_read(des_, buf, len, timeout);
     }while (n<0&&errno==EINTR);
     if(n<0)
         throw std::exception();
@@ -41,10 +41,4 @@ FileStream::~FileStream(){
 FileStream::FileStream()
 :des_(0)
 {
-}
-
-void FileStream::open(const char *fn, int flag, int mode) {
-    des_=st_open(fn, flag,mode);
-    if(des_==0)
-        throw std::exception();
 }

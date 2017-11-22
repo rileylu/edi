@@ -8,24 +8,22 @@
 #include <istream>
 #include <ostream>
 #include "ststreambuf.hpp"
-
 class BufferedIOStream:public std::istream,public std::ostream{
 public:
-    BufferedIOStream(STStreamBuf* in,STStreamBuf* out);
-    STStreamBuf* get_in_buf();
-    STStreamBuf* get_out_buf();
-
+    BufferedIOStream(STStreamBuf& in,STStreamBuf& out);
+    STStreamBuf& get_in_buf();
+    STStreamBuf& get_out_buf();
 private:
-    STStreamBuf* inbuf_;
-    STStreamBuf* outbuf_;
+    STStreamBuf& inbuf_;
+    STStreamBuf& outbuf_;
 };
 
-inline STStreamBuf* BufferedIOStream::get_in_buf()
+inline STStreamBuf& BufferedIOStream::get_in_buf()
 {
     return inbuf_;
 }
 
-inline STStreamBuf* BufferedIOStream::get_out_buf()
+inline STStreamBuf& BufferedIOStream::get_out_buf()
 {
     return outbuf_;
 }
