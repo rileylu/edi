@@ -18,6 +18,7 @@
 		EE4751811FC5684D00722630 /* basesession.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE47517F1FC5684D00722630 /* basesession.cpp */; };
 		EE4751871FC59D4100722630 /* netsession.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4751851FC59D4100722630 /* netsession.cpp */; };
 		EE47518A1FC5A0FC00722630 /* filesession.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4751881FC5A0FC00722630 /* filesession.cpp */; };
+		EE47518D1FC5C08000722630 /* stsyncqueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE47518B1FC5C08000722630 /* stsyncqueue.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -56,6 +57,8 @@
 		EE4751861FC59D4100722630 /* netsession.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = netsession.hpp; sourceTree = "<group>"; };
 		EE4751881FC5A0FC00722630 /* filesession.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = filesession.cpp; sourceTree = "<group>"; };
 		EE4751891FC5A0FC00722630 /* filesession.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = filesession.hpp; sourceTree = "<group>"; };
+		EE47518B1FC5C08000722630 /* stsyncqueue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = stsyncqueue.cpp; sourceTree = "<group>"; };
+		EE47518C1FC5C08000722630 /* stsyncqueue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = stsyncqueue.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +113,8 @@
 				EE4751861FC59D4100722630 /* netsession.hpp */,
 				EE4751881FC5A0FC00722630 /* filesession.cpp */,
 				EE4751891FC5A0FC00722630 /* filesession.hpp */,
+				EE47518B1FC5C08000722630 /* stsyncqueue.cpp */,
+				EE47518C1FC5C08000722630 /* stsyncqueue.hpp */,
 			);
 			path = edi;
 			sourceTree = "<group>";
@@ -180,6 +185,7 @@
 				EE4751791FC541C200722630 /* ststreambuf.cpp in Sources */,
 				EE47517E1FC54AA200722630 /* bufferediostream.cpp in Sources */,
 				EE4751781FC541C200722630 /* socketstream.cpp in Sources */,
+				EE47518D1FC5C08000722630 /* stsyncqueue.cpp in Sources */,
 				EE4751761FC541C200722630 /* ftpclient.cpp in Sources */,
 				EE4751871FC59D4100722630 /* netsession.cpp in Sources */,
 			);

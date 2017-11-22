@@ -24,7 +24,7 @@ BaseSession::~BaseSession() {
 }
 
 void BaseSession::flush() {
-    io_->sync();
+    *io_<<std::flush;
 }
 
 
