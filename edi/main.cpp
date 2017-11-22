@@ -38,7 +38,7 @@ int main()
 {
     st_init();
     std::vector<st_thread_t> tds;
-    for(int i=0;i<100;++i)
+    for(int i=0;i<1;++i)
         tds.push_back(st_thread_create(work, nullptr,1,0));
     for(auto td:tds)
         st_thread_join(td, nullptr);

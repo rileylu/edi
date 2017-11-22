@@ -289,3 +289,5 @@ __pycache__/
 # CMAKE
 cmake-build-debug/
 cmake-build-release/
+
+DerivedData/
