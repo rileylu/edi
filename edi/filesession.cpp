@@ -19,3 +19,8 @@ FileSession::FileSession(const std::string &fn, int flags, mode_t mode,st_utime_
     set_istream(fs_);
 }
 
+FileSession::~FileSession() noexcept {
+    flush();
+}
+
+

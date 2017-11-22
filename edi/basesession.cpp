@@ -23,3 +23,8 @@ BaseSession::~BaseSession() {
         io_.reset(nullptr);
 }
 
+void BaseSession::flush() {
+    io_->sync();
+}
+
+

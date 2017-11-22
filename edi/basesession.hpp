@@ -23,6 +23,7 @@ protected:
     BaseSession(st_utime_t timeout=60*UNIT);
     void set_istream(IStream& is);
     st_utime_t timeout_;
+    void flush();
 private:
     std::unique_ptr<STStreamBuf> inbuf_;
     std::unique_ptr<STStreamBuf> outbuf_;

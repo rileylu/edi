@@ -23,3 +23,8 @@ NetSession::NetSession(const std::string &host, const std::string &port,st_utime
     set_istream(ss_);
 }
 
+NetSession::~NetSession() noexcept {
+    flush();
+}
+
+

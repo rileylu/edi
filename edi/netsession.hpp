@@ -17,6 +17,7 @@ class NetSession:public BaseSession
 {
 public:
     NetSession(const std::string& host,const std::string& port,st_utime_t timeout=60*UNIT);
+    ~NetSession();
 private:
     void connect();
 private:

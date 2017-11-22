@@ -3,48 +3,43 @@
 #include <string>
 #include <vector>
 #include "filesession.hpp"
+#include <sys/stat.h>
 
 
 void *work(void*)
 {
-//    FTPClient cli("172.16.120.128","21","lmz","gklmz2013");
-    bool working=false;
+    //    FTPClient cli("172.16.120.128","21","lmz","gklmz2013");
+    bool retry=false;
     do
     {
         try
         {
+            std::string dir=std::to_string(reinterpret_cast<long>(st_thread_self()));
+            mkdir(dir.c_str(),0755);
+            FileSession fs("list.txt",O_RDONLY);
+            std::string fn;
             FTPClient cli("124.207.27.34","21","gzftpqas01","001testgz");
             cli.open();
             cli.login();
             cli.change_dir("/OUT/stockout/");
-            std::istream& is(cli.begin_list("."));
-            std::string fn;
-            std::size_t pos;
-            FileStream f;
-            fn="list";
-            fn+=std::to_string(reinterpret_cast<long>(st_thread_self()));
-            fn+=".txt";
-            FileSession fs(fn,O_CREAT|O_WRONLY|O_TRUNC);
-            while(getline(is,fn))
+            while(std::getline(fs.io(),fn))
             {
-                if(fn.find(".xml")!=fn.npos)
-                {
-                    if ((pos = fn.find('\r')) != fn.npos)
-                        fn.erase(pos, 1);
-                    fs.io()<<fn<<'\n';
-                }
+                std::istream& is(cli.begin_download(fn));
+                FileSession newFile(dir+"/"+fn,O_CREAT|O_WRONLY|O_TRUNC);
+                newFile.io()<<is.rdbuf();
+                cli.end_download();
             }
-            fs.io()<<std::flush;
-            cli.end_list();
             cli.logout();
-            working=false;
+            retry=false;
         }
         catch (...)
         {
             perror("error");
-            working=true;
+            retry=true;
+            st_sleep(10);
         }
-    }while(working);
+    }while(retry);
+    
     return nullptr;
 }
 int main()
@@ -52,7 +47,7 @@ int main()
     st_set_eventsys(ST_EVENTSYS_ALT);
     st_init();
     std::vector<st_thread_t> tds;
-    for(int i=0;i<100;++i)
+    for(int i=0;i<50;++i)
         tds.push_back(st_thread_create(work, nullptr,1,0));
     for(auto td:tds)
         st_thread_join(td, nullptr);
