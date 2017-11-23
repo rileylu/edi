@@ -6,17 +6,19 @@
 
 class STStreamBuf : Noncopyable, public std::streambuf {
 public:
-    const static std::size_t BUFSIZE = 4096;
+    const static std::size_t BUFSIZE = 1024;
     STStreamBuf(IStream& is)
         : istream_(is)
     {
-        setp(buf_.data(), buf_.data() + (BUFSIZE - 1));
-        setg(buf_.data(), buf_.data(), buf_.data());
+        reset();
     }
-
     virtual ~STStreamBuf();
-
 protected:
+    void reset()
+    {
+        setp(outbuf_.data(), outbuf_.data() + BUFSIZE);
+        setg(inbuf_.data()+4, inbuf_.data()+4, inbuf_.data()+4);
+    }
     int_type overflow(int_type __c = traits_type::eof()) override;
 
     int_type underflow() override;
@@ -27,5 +29,6 @@ protected:
 
 private:
     IStream& istream_;
-    std::array<char, BUFSIZE> buf_;
+    std::array<char, BUFSIZE> inbuf_;
+    std::array<char, BUFSIZE> outbuf_;
 };

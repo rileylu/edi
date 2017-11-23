@@ -19,8 +19,8 @@ STStreamBuf::int_type STStreamBuf::overflow(int_type c) {
 }
 
 int STStreamBuf::flushbuffer() {
-    int num = pptr() - pbase();
-    if (istream_.write(buf_.data(), num) != num)
+    int num = int(pptr() - pbase());
+    if (istream_.write(outbuf_.data(), num) != num)
         return EOF;
     pbump(-num);
     return num;
@@ -40,14 +40,18 @@ int STStreamBuf::underflow() {
     if (gptr() < egptr()) {
         return traits_type::to_int_type(*gptr());
     }
+    int putback=int(gptr()-eback());
+    if(putback>4)
+        putback=4;
+    memmove(inbuf_.data()+(4-putback), gptr()-putback,putback);
     int num;
-    num = istream_.read(buf_.data(), BUFSIZE);
+    num = int(istream_.read(inbuf_.data()+4, BUFSIZE-4));
     if (num <= 0) {
         return EOF;
     }
-    setg(buf_.data() ,
-         buf_.data() ,
-         buf_.data()+num);
+    setg(inbuf_.data()+(4-putback) ,
+         inbuf_.data()+4 ,
+         inbuf_.data()+4+num);
     return traits_type::to_int_type(*gptr());
 }
 
