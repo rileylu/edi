@@ -13,7 +13,7 @@ public:
     FTPClient(const std::string& host, const std::string& port, const std::string& user, const std::string& pass,
         st_utime_t timeout = 30 * unit);
 
-    ~FTPClient() = default;
+    ~FTPClient();
 
     void open();
 

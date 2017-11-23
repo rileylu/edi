@@ -144,3 +144,10 @@ void FTPClient::change_dir(const std::string &dir) {
     parse_response(res,"250");
 }
 
+FTPClient::~FTPClient() {
+    if(ctrlSession_)
+        ctrlSession_.reset(nullptr);
+    if(dataSession_)
+        dataSession_.reset(nullptr);
+}
+
