@@ -9,11 +9,11 @@ void *work(void *args) {
     do
     {
         try {
-            FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
-            //        FTPClient cli("172.16.120.128", "21", "lmz", "gklmz2013");
+            //            FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
+            FTPClient cli("172.16.120.128", "21", "lmz", "gklmz2013");
             cli.open();
             cli.login();
-            cli.change_dir("/OUT/stockout/");
+//            cli.change_dir("/OUT/stockout/");
             std::string fn;
             while (!fileList->empty()) {
                 fileList->take(fn);
@@ -108,11 +108,12 @@ int main() {
     f.close();
     
     std::vector<st_thread_t> tds;
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 100; ++i)
         tds.push_back(st_thread_create(work, &fileList, 1, 0));
-    //        tds.push_back(st_thread_create(upload_file, &fileList, 1, 0));
+    //            tds.push_back(st_thread_create(upload_file, &fileList, 1, 0));
     //        tds.push_back(st_thread_create(get_list, nullptr, 1, 0));
-    for (auto td : tds)
-        st_thread_join(td, nullptr);
+    st_thread_exit(0);
+//    for (auto td : tds)
+//        st_thread_join(td, nullptr);
     return 0;
 }
