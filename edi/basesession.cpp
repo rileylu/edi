@@ -20,7 +20,7 @@ BaseSession::~BaseSession()
 
 void BaseSession::flush()
 {
-    *io_ << std::flush;
+    io_->sync();
 }
 
 BufferedIOStream& BaseSession::io()

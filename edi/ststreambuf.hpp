@@ -6,7 +6,7 @@
 
 class STStreamBuf : Noncopyable, public std::streambuf {
 public:
-    const static std::size_t BUFSIZE = 1024;
+    const static std::size_t BUFSIZE = 4096;
     STStreamBuf(IStream& is)
         : istream_(is)
     {

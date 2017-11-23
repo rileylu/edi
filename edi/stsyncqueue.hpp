@@ -9,9 +9,7 @@
 template<typename T>
 class STSyncQueue : Noncopyable {
 public:
-    static const int max_size = 10000;
-    
-    STSyncQueue(int max = max_size);
+    STSyncQueue(int max = 10000);
     
     ~STSyncQueue();
     
