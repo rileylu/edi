@@ -1,51 +1,94 @@
-//
-//  stsyncqueue.hpp
-//  edi
-//
-//  Created by lmz on 22/11/2017.
-//  Copyright © 2017 com.oocl. All rights reserved.
-//
+#pragma once
 
-#ifndef stsyncqueue_hpp
-#define stsyncqueue_hpp
-
+#include "guard.h"
 #include "noncopyable.hpp"
-#include <vector>
-#include <st.h>
+#include "stcondition.h"
+#include "stmutex.h"
+#include <queue>
 
 template<typename T>
-class STSyncQueue:Noncopyable
-{
+class STSyncQueue : Noncopyable {
 public:
-    static const int max_size=10000;
-    STSyncQueue(int max=max_size);
-    void put(T&& t);
-    void put(const T& t);
-    void take(T& t);
-    void emtpy();
-    void full();
+    static const int max_size = 10000;
+
+    STSyncQueue(int max = max_size);
+
+    ~STSyncQueue();
+
+    void put(T &&t);
+
+    void put(const T &t);
+
+    void take(T &t);
+
+    bool empty();
+
+    bool full();
+
 private:
-    template<typename U>
-    void take_(U&& u);
-    
-    bool full_;
-    bool empty_;
+    template<typename F>
+    void put_(F &&f);
+
+    std::queue<T> data_;
     int max_;
-    st_mutex_t mutex_;
-    st_cond_t full_cond_;
-    st_cond_t empty_cond_;
+    STMutex mutex_;
+    STCondition notFull_;
+    STCondition notEmpty_;
 };
 
 template<typename T>
-STSyncQueue<T>::STSyncQueue(int maxsize)
-:full_(false),empty_(true),max_(maxsize),mutex_(st_mutex_new()),full_cond_(st_cond_new()),empty_cond_(st_cond_new())
-{
-}
-template<typename T>
-template<typename U>
-void STSyncQueue<T>::take_(U&& u)
-{
-    st_mutex_lock(mutex_);
+template<typename F>
+void STSyncQueue<T>::put_(F &&f) {
+    do {
+        while (data_.size() >= max_)
+            notFull_.wait();
+    } while (data_.size() >= max_);
+    Guard<STMutex> lck(mutex_);
+    data_.push(std::forward<F>(f));
+    notEmpty_.signal_one();
 }
 
-#endif /* stsyncqueue_hpp */
+template<typename T>
+STSyncQueue<T>::STSyncQueue(int maxsize)
+        : max_(maxsize) {
+}
+
+template<typename T>
+STSyncQueue<T>::~STSyncQueue() {
+    notEmpty_.signal_all();
+    notFull_.signal_all();
+}
+
+template<typename T>
+void STSyncQueue<T>::put(T &&t) {
+    put_(t);
+}
+
+template<typename T>
+void STSyncQueue<T>::put(const T &t) {
+    put_(t);
+}
+
+template<typename T>
+void STSyncQueue<T>::take(T &t) {
+    do {
+        while (data_.size() == 0)
+            notEmpty_.wait();
+    } while (data_.size() == 0);
+    Guard<STMutex> lck(mutex_);
+    t = std::move(data_.front());
+    data_.pop();
+    notFull_.signal_one();
+}
+
+template<typename T>
+inline bool STSyncQueue<T>::empty() {
+    Guard<STMutex> lck(mutex_);
+    return data_.empty();
+}
+
+template<typename T>
+bool STSyncQueue<T>::full() {
+    Guard<STMutex> lck(mutex_);
+    return data_.size() >= max_;
+}
