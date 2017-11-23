@@ -13,12 +13,13 @@
 		EE4751781FC541C200722630 /* socketstream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE47516A1FC541C100722630 /* socketstream.cpp */; };
 		EE4751791FC541C200722630 /* ststreambuf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE47516B1FC541C100722630 /* ststreambuf.cpp */; };
 		EE47517A1FC541C200722630 /* istream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE47516F1FC541C200722630 /* istream.cpp */; };
-		EE47517B1FC541C200722630 /* noncopyable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4751711FC541C200722630 /* noncopyable.cpp */; };
 		EE47517E1FC54AA200722630 /* bufferediostream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE47517D1FC54AA200722630 /* bufferediostream.cpp */; };
 		EE4751811FC5684D00722630 /* basesession.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE47517F1FC5684D00722630 /* basesession.cpp */; };
 		EE4751871FC59D4100722630 /* netsession.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4751851FC59D4100722630 /* netsession.cpp */; };
 		EE47518A1FC5A0FC00722630 /* filesession.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4751881FC5A0FC00722630 /* filesession.cpp */; };
-		EE47518D1FC5C08000722630 /* stsyncqueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE47518B1FC5C08000722630 /* stsyncqueue.cpp */; };
+		EEF065741FC6992500151EF3 /* stcondition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF065701FC6992500151EF3 /* stcondition.cpp */; };
+		EEF065751FC6992500151EF3 /* stmutex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF065721FC6992500151EF3 /* stmutex.cpp */; };
+		EEF065761FC6992500151EF3 /* utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEF065731FC6992500151EF3 /* utilities.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -47,7 +48,6 @@
 		EE47516E1FC541C100722630 /* ftpclient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ftpclient.h; sourceTree = "<group>"; };
 		EE47516F1FC541C200722630 /* istream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = istream.cpp; sourceTree = "<group>"; };
 		EE4751701FC541C200722630 /* ststreambuf.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ststreambuf.hpp; sourceTree = "<group>"; };
-		EE4751711FC541C200722630 /* noncopyable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = noncopyable.cpp; sourceTree = "<group>"; };
 		EE4751721FC541C200722630 /* istream.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = istream.hpp; sourceTree = "<group>"; };
 		EE47517C1FC54AA200722630 /* bufferediostream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bufferediostream.h; sourceTree = "<group>"; };
 		EE47517D1FC54AA200722630 /* bufferediostream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bufferediostream.cpp; sourceTree = "<group>"; };
@@ -57,8 +57,13 @@
 		EE4751861FC59D4100722630 /* netsession.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = netsession.hpp; sourceTree = "<group>"; };
 		EE4751881FC5A0FC00722630 /* filesession.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = filesession.cpp; sourceTree = "<group>"; };
 		EE4751891FC5A0FC00722630 /* filesession.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = filesession.hpp; sourceTree = "<group>"; };
-		EE47518B1FC5C08000722630 /* stsyncqueue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = stsyncqueue.cpp; sourceTree = "<group>"; };
 		EE47518C1FC5C08000722630 /* stsyncqueue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = stsyncqueue.hpp; sourceTree = "<group>"; };
+		EEF0656E1FC6992400151EF3 /* stmutex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stmutex.h; sourceTree = "<group>"; };
+		EEF0656F1FC6992500151EF3 /* stcondition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stcondition.h; sourceTree = "<group>"; };
+		EEF065701FC6992500151EF3 /* stcondition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stcondition.cpp; sourceTree = "<group>"; };
+		EEF065711FC6992500151EF3 /* guard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guard.h; sourceTree = "<group>"; };
+		EEF065721FC6992500151EF3 /* stmutex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stmutex.cpp; sourceTree = "<group>"; };
+		EEF065731FC6992500151EF3 /* utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utilities.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +96,12 @@
 		EE4751341FC506F500722630 /* edi */ = {
 			isa = PBXGroup;
 			children = (
+				EEF065711FC6992500151EF3 /* guard.h */,
+				EEF065701FC6992500151EF3 /* stcondition.cpp */,
+				EEF0656F1FC6992500151EF3 /* stcondition.h */,
+				EEF065721FC6992500151EF3 /* stmutex.cpp */,
+				EEF0656E1FC6992400151EF3 /* stmutex.h */,
+				EEF065731FC6992500151EF3 /* utilities.cpp */,
 				EE47517D1FC54AA200722630 /* bufferediostream.cpp */,
 				EE47517C1FC54AA200722630 /* bufferediostream.h */,
 				EE4751621FC541C000722630 /* filestream.cpp */,
@@ -100,7 +111,6 @@
 				EE47516F1FC541C200722630 /* istream.cpp */,
 				EE4751721FC541C200722630 /* istream.hpp */,
 				EE4751681FC541C100722630 /* main.cpp */,
-				EE4751711FC541C200722630 /* noncopyable.cpp */,
 				EE47516C1FC541C100722630 /* noncopyable.hpp */,
 				EE47516A1FC541C100722630 /* socketstream.cpp */,
 				EE4751641FC541C100722630 /* socketstream.hpp */,
@@ -113,7 +123,6 @@
 				EE4751861FC59D4100722630 /* netsession.hpp */,
 				EE4751881FC5A0FC00722630 /* filesession.cpp */,
 				EE4751891FC5A0FC00722630 /* filesession.hpp */,
-				EE47518B1FC5C08000722630 /* stsyncqueue.cpp */,
 				EE47518C1FC5C08000722630 /* stsyncqueue.hpp */,
 			);
 			path = edi;
@@ -177,15 +186,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE47518A1FC5A0FC00722630 /* filesession.cpp in Sources */,
-				EE47517B1FC541C200722630 /* noncopyable.cpp in Sources */,
 				EE47517A1FC541C200722630 /* istream.cpp in Sources */,
+				EEF065761FC6992500151EF3 /* utilities.cpp in Sources */,
+				EEF065751FC6992500151EF3 /* stmutex.cpp in Sources */,
 				EE4751741FC541C200722630 /* filestream.cpp in Sources */,
 				EE4751771FC541C200722630 /* main.cpp in Sources */,
 				EE4751811FC5684D00722630 /* basesession.cpp in Sources */,
 				EE4751791FC541C200722630 /* ststreambuf.cpp in Sources */,
 				EE47517E1FC54AA200722630 /* bufferediostream.cpp in Sources */,
 				EE4751781FC541C200722630 /* socketstream.cpp in Sources */,
-				EE47518D1FC5C08000722630 /* stsyncqueue.cpp in Sources */,
+				EEF065741FC6992500151EF3 /* stcondition.cpp in Sources */,
 				EE4751761FC541C200722630 /* ftpclient.cpp in Sources */,
 				EE4751871FC59D4100722630 /* netsession.cpp in Sources */,
 			);

@@ -36,16 +36,14 @@ ssize_t SocketStream::read(void* buf, size_t len, st_utime_t timeout)
     return nread;
 }
 
-void SocketStream::destructor(void* args)
-{
-    int* fd = reinterpret_cast<int*>(args);
-    ::shutdown(*fd, SHUT_RDWR);
-}
-
 SocketStream::~SocketStream()
 {
     if (des_)
+    {
+        int fd=st_netfd_fileno(des_);
+        ::shutdown(fd,SHUT_RDWR);
         st_netfd_close(des_);
+    }
 }
 
 SocketStream::SocketStream()
@@ -56,7 +54,6 @@ SocketStream::SocketStream()
     des_ = st_netfd_open_socket(s);
     if (des_ == 0)
         throw std::exception();
-    st_netfd_setspecific(des_, &s, &SocketStream::destructor);
 }
 
 st_netfd_t SocketStream::get_des() const

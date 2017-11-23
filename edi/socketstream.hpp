@@ -12,6 +12,5 @@ public:
     st_netfd_t get_des() const override;
 
 private:
-    static void destructor(void* args);
     st_netfd_t des_;
 };

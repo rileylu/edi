@@ -13,10 +13,17 @@ void *work(void *args) {
         std::string fn;
         while (!fileList->empty()) {
             fileList->take(fn);
-            std::istream &is(cli.begin_download(fn));
-            FileSession newFile(fn, O_CREAT | O_WRONLY | O_TRUNC);
-            newFile.io() << is.rdbuf();
-            cli.end_download();
+            try{
+                std::istream &is(cli.begin_download(fn));
+                FileSession newFile(fn, O_CREAT | O_WRONLY | O_TRUNC);
+                newFile.io() << is.rdbuf();
+                cli.end_download();
+            }
+            catch(const std::exception& e)
+            {
+                fileList->put(fn);
+                throw e;
+            }
         }
         cli.logout();
     } catch (...) {
@@ -51,16 +58,16 @@ int main() {
     std::ifstream f("list.txt", std::ios::binary);
     std::string fn;
     STSyncQueue<std::string> fileList(50000);
-
+    
     while (std::getline(f, fn)) {
         fileList.put(fn);
     }
     f.close();
-
+    
     std::vector<st_thread_t> tds;
     for (int i = 0; i < 50; ++i)
         tds.push_back(st_thread_create(work, &fileList, 1, 0));
-//        tds.push_back(st_thread_create(get_list, nullptr, 1, 0));
+    //        tds.push_back(st_thread_create(get_list, nullptr, 1, 0));
     for (auto td : tds)
         st_thread_join(td, nullptr);
     return 0;

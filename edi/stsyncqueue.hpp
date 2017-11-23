@@ -10,25 +10,25 @@ template<typename T>
 class STSyncQueue : Noncopyable {
 public:
     static const int max_size = 10000;
-
+    
     STSyncQueue(int max = max_size);
-
+    
     ~STSyncQueue();
-
+    
     void put(T &&t);
-
+    
     void put(const T &t);
-
+    
     void take(T &t);
-
+    
     bool empty();
-
+    
     bool full();
-
+    
 private:
     template<typename F>
     void put_(F &&f);
-
+    
     std::queue<T> data_;
     int max_;
     STMutex mutex_;
@@ -39,10 +39,8 @@ private:
 template<typename T>
 template<typename F>
 void STSyncQueue<T>::put_(F &&f) {
-    do {
-        while (data_.size() >= max_)
-            notFull_.wait();
-    } while (data_.size() >= max_);
+    while (data_.size() >= max_)
+        notFull_.wait();
     Guard<STMutex> lck(mutex_);
     data_.push(std::forward<F>(f));
     notEmpty_.signal_one();
@@ -50,7 +48,7 @@ void STSyncQueue<T>::put_(F &&f) {
 
 template<typename T>
 STSyncQueue<T>::STSyncQueue(int maxsize)
-        : max_(maxsize) {
+: max_(maxsize) {
 }
 
 template<typename T>
@@ -71,10 +69,8 @@ void STSyncQueue<T>::put(const T &t) {
 
 template<typename T>
 void STSyncQueue<T>::take(T &t) {
-    do {
-        while (data_.size() == 0)
-            notEmpty_.wait();
-    } while (data_.size() == 0);
+    while (data_.size() == 0)
+        notEmpty_.wait();
     Guard<STMutex> lck(mutex_);
     t = std::move(data_.front());
     data_.pop();
