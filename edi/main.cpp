@@ -44,6 +44,27 @@ void* download_file(void* args)
     return nullptr;
 }
 
+void* download_bigfile(void* args)
+{
+    try {
+        FTPClient cli("146.222.65.27", "21", "lmz", "gklmz2013", 120 * edi::TIMEOUT_UNIT);
+        cli.open();
+        cli.login();
+        std::istream& is(cli.begin_download("GT-WMS.exe"));
+        std::string fn = "GT-WMS";
+        fn.append(std::to_string(reinterpret_cast<long>(st_thread_self())));
+        fn.append(".exe");
+        FileStream fs(fn, O_CREAT | O_WRONLY | O_TRUNC);
+        while (fs << is.rdbuf())
+            ;
+        cli.end_download();
+        cli.logout();
+    } catch (...) {
+        perror("error");
+    }
+    return 0;
+}
+
 void* get_list(void* args)
 {
     //    FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
@@ -118,8 +139,9 @@ int main()
     f.close();
 
     std::vector<st_thread_t> tds;
-    for (int i = 0; i < 10; ++i)
-        tds.push_back(st_thread_create(download_file, &fileList, 1, 0));
+    for (int i = 0; i < 100; ++i)
+        tds.push_back(st_thread_create(download_bigfile, 0, 1, 0));
+    //        tds.push_back(st_thread_create(download_file, &fileList, 1, 0));
     //        tds.push_back(st_thread_create(upload_file, &fileList, 1, 0));
     //        tds.push_back(st_thread_create(get_list, nullptr, 1, 0));
     st_thread_exit(0);
