@@ -46,7 +46,7 @@ void FTPClient::login()
 void FTPClient::parse_response(const std::string& res, const std::string& code)
 {
     if (res.find(code) == res.npos) {
-        std::fprintf(stderr, "%s\n", res);
+        std::fprintf(stderr, "%s\n", res.c_str());
         throw std::exception();
     }
 }

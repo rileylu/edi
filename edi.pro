@@ -3,26 +3,34 @@ CONFIG += console c++14
 CONFIG -= app_bundle
 CONFIG -= qt
 
-LIBS += -ljemalloc -lst
+INCLUDEPATH += /usr/local/include \
+               /Users/lmz/Downloads/st-1.9/DARWIN_17.2.0_DBG
 
-SOURCES += edi/filestream.cpp \
-    edi/ftpclient.cpp \
-    edi/main.cpp \
-    edi/socketstream.cpp \
-    edi/stcondition.cpp \
-    edi/stmutex.cpp \
-    edi/ststreambuf.cpp \
-    edi/utilities.cpp
+LIBS += -L/usr/local/lib \
+        -L/Users/lmz/Downloads/st-1.9/DARWIN_17.2.0_DBG \
+        -ljemalloc \
+        -lst
+
+SOURCES += filestream.cpp \
+    ftpclient.cpp \
+    main.cpp \
+    socketstream.cpp \
+    stcondition.cpp \
+    stmutex.cpp \
+    ststreambuf.cpp \
+    utilities.cpp \
+    threadpool.cpp
 
 HEADERS += \
-    edi/filestream.hpp \
-    edi/ftpclient.h \
-    edi/guard.h \
-    edi/noncopyable.hpp \
-    edi/socketstream.hpp \
-    edi/stcondition.h \
-    edi/stmutex.h \
-    edi/ststreambuf.hpp \
-    edi/stsyncqueue.hpp \
-    edi/utilities.hpp \
-    edi/istream.h
+    filestream.hpp \
+    ftpclient.h \
+    guard.h \
+    noncopyable.hpp \
+    socketstream.hpp \
+    stcondition.h \
+    stmutex.h \
+    ststreambuf.hpp \
+    stsyncqueue.hpp \
+    utilities.hpp \
+    istream.h \
+    threadpool.h

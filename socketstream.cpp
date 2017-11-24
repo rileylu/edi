@@ -2,7 +2,7 @@
 #include "utilities.hpp"
 
 SocketStream::SocketStream(const std::string& host, const std::string port, st_utime_t timeout)
-    : std::iostream()
+    : std::iostream(nullptr)
     , fd_(0)
     , timeout_(timeout)
     , buf_(nullptr)

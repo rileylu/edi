@@ -1,6 +1,7 @@
 #include "filestream.hpp"
 #include "ftpclient.h"
 #include "stsyncqueue.hpp"
+#include "threadpool.h"
 #include <fstream>
 
 void* download_file(void* args)
@@ -11,13 +12,13 @@ void* download_file(void* args)
         try {
             if (fileList->empty())
                 return 0;
-            //            FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
+            FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
             //            FTPClient cli("172.16.120.128", "21", "lmz", "gklmz2013");
-            FTPClient cli("146.222.65.142", "21", "worktib", "worktib");
+            //            FTPClient cli("146.222.65.142", "21", "worktib", "worktib");
             cli.open();
             cli.login();
-            //            cli.change_dir("/OUT/stockout/");
-            cli.change_dir("/home/worktib/dmtp/in/");
+            cli.change_dir("/OUT/stockout/");
+            //            cli.change_dir("/home/worktib/dmtp/in/");
             std::string fn;
             while (!fileList->empty()) {
                 fileList->take(fn);
@@ -67,12 +68,12 @@ void* download_bigfile(void* args)
 
 void* get_list(void* args)
 {
-    //    FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
-    FTPClient cli("14.222.65.142", "21", "worktib", "worktib");
+    FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
+    //    FTPClient cli("14.222.65.142", "21", "worktib", "worktib");
     cli.open();
     cli.login();
-    cli.change_dir("/home/worktib/dmtp/out/");
-    //    cli.change_dir("/OUT/stockout/");
+    //    cli.change_dir("/home/worktib/dmtp/out/");
+    cli.change_dir("/OUT/stockout/");
     std::ofstream f("list.txt", std::ios::binary);
     std::istream& is(cli.begin_list("."));
     std::string fn;
@@ -132,20 +133,22 @@ int main()
     std::ifstream f("list.txt", std::ios::binary);
     std::string fn;
     STSyncQueue<std::string> fileList(50000);
-
     while (std::getline(f, fn)) {
         fileList.put(fn);
     }
     f.close();
-
-    std::vector<st_thread_t> tds;
+    ThreadPool tp(50);
+    auto task = [&fileList] {
+        download_file(&fileList);
+    };
     for (int i = 0; i < 100; ++i)
-        tds.push_back(st_thread_create(download_bigfile, 0, 1, 0));
+        tp.add_task(task);
+    st_sleep(0);
+    //    for (int i = 0; i < 50; ++i)
+    //        //        tds.push_back(st_thread_create(download_bigfile, 0, 1, 0));
     //        tds.push_back(st_thread_create(download_file, &fileList, 1, 0));
     //        tds.push_back(st_thread_create(upload_file, &fileList, 1, 0));
     //        tds.push_back(st_thread_create(get_list, nullptr, 1, 0));
-    st_thread_exit(0);
     //    for (auto td : tds)
-    //        st_thread_join(td, nullptr);
     return 0;
 }

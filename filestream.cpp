@@ -1,6 +1,6 @@
 #include "filestream.hpp"
 FileStream::FileStream(const std::string& path, int flags, mode_t mode, st_utime_t timeout)
-    : std::iostream()
+    : std::iostream(nullptr)
     , fd_(0)
     , timeout_(timeout)
     , buf_(nullptr)
