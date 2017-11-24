@@ -1,5 +1,5 @@
 #pragma once
-#include "netsession.hpp"
+#include "socketstream.hpp"
 #include <istream>
 #include <memory>
 #include <ostream>
@@ -8,10 +8,8 @@
 
 class FTPClient {
 public:
-    const static int unit = 1000000;
-
     FTPClient(const std::string& host, const std::string& port, const std::string& user, const std::string& pass,
-        st_utime_t timeout = 30 * unit);
+        st_utime_t timeout = 10 * edi::TIMEOUT_UNIT);
 
     ~FTPClient();
 
@@ -45,6 +43,6 @@ private:
     std::string pass_;
     st_utime_t timeout_;
 
-    std::unique_ptr<NetSession> ctrlSession_;
-    std::unique_ptr<NetSession> dataSession_;
+    SocketStream ctrlSession_;
+    std::unique_ptr<SocketStream> dataSession_;
 };

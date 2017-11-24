@@ -4,5 +4,6 @@
 #include <sys/types.h>
 
 namespace edi {
-addrinfo getaddrinfo(const std::string& host, const std::string& servname);
+const int TIMEOUT_UNIT = 1000000;
+extern addrinfo getaddrinfo(const std::string& host, const std::string& servname);
 }

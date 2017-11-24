@@ -1,52 +1,49 @@
-//
-//  filestream.cpp
-//  edi
-//
-//  Created by lmz on 22/11/2017.
-//  Copyright © 2017 com.oocl. All rights reserved.
-//
-
 #include "filestream.hpp"
-#include <exception>
-ssize_t FileStream::write(const void* buf, size_t len, st_utime_t timeout)
+FileStream::FileStream(const std::string& path, int flags, mode_t mode, st_utime_t timeout)
+    : std::iostream()
+    , fd_(0)
+    , timeout_(timeout)
+    , buf_(nullptr)
 {
-    ssize_t n = 0;
-    do {
-        n = st_write(des_, buf, len, timeout);
-    } while (n < 0 && errno == EINTR);
-    if (n < len)
+    fd_ = st_open(path.c_str(), flags, mode);
+    if (fd_ == nullptr)
         throw std::exception();
-    return len;
+    buf_.reset(new FileStreamBuf(fd_, timeout));
+    rdbuf(buf_.get());
 }
 
-ssize_t FileStream::read(void* buf, size_t len, st_utime_t timeout)
+FileStream::~FileStream()
+{
+    if (buf_)
+        buf_.reset(nullptr);
+    if (fd_)
+        st_netfd_close(fd_);
+}
+
+FileStream::FileStreamBuf::FileStreamBuf(st_netfd_t fd, st_utime_t timeout)
+    : fd_(fd)
+    , timeout_(timeout)
+{
+}
+
+ssize_t FileStream::FileStreamBuf::read(STStreamBuf::char_type* buf, std::streamsize sz)
 {
     ssize_t n = 0;
     do {
-        n = st_read(des_, buf, len, timeout);
+        n = st_read(fd_, buf, sz, timeout_);
     } while (n < 0 && errno == EINTR);
     if (n < 0)
         throw std::exception();
     return n;
 }
 
-FileStream::~FileStream()
+ssize_t FileStream::FileStreamBuf::write(const STStreamBuf::char_type* buf, std::streamsize sz)
 {
-    if (des_)
-        st_netfd_close(des_);
-}
-
-FileStream::FileStream()
-    : des_(0)
-{
-}
-
-st_netfd_t FileStream::get_des() const
-{
-    return des_;
-}
-
-void FileStream::set_des(st_netfd_t des)
-{
-    des_ = des;
+    ssize_t n = 0;
+    do {
+        n = st_write(fd_, buf, sz, timeout_);
+    } while (n < 0 && errno == EINTR);
+    if (n < 0)
+        throw std::exception();
+    return n;
 }

@@ -1,56 +1,62 @@
-#include "filesession.hpp"
+#include "filestream.hpp"
 #include "ftpclient.h"
 #include "stsyncqueue.hpp"
 #include <fstream>
 
-void *work(void *args) {
-    bool retry=false;
-    auto *fileList = reinterpret_cast<STSyncQueue<std::string> *>(args);
-    do
-    {
+void* download_file(void* args)
+{
+    bool retry = false;
+    auto* fileList = reinterpret_cast<STSyncQueue<std::string>*>(args);
+    do {
         try {
-            if(fileList->empty())
+            if (fileList->empty())
                 return 0;
             //            FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
-            FTPClient cli("172.16.120.128", "21", "lmz", "gklmz2013");
+            //            FTPClient cli("172.16.120.128", "21", "lmz", "gklmz2013");
+            FTPClient cli("146.222.65.142", "21", "worktib", "worktib");
             cli.open();
             cli.login();
             //            cli.change_dir("/OUT/stockout/");
+            cli.change_dir("/home/worktib/dmtp/in/");
             std::string fn;
             while (!fileList->empty()) {
                 fileList->take(fn);
-                try{
-                    std::istream &is(cli.begin_download(fn));
-                    FileSession newFile(fn, O_CREAT | O_WRONLY | O_TRUNC);
-                    while(is>>newFile.io().rdbuf());
+                try {
+                    std::istream& is(cli.begin_download(fn));
+                    //                    FileSession newFile(fn, O_CREAT | O_WRONLY | O_TRUNC);
+                    FileStream fs(fn, O_CREAT | O_WRONLY | O_TRUNC);
+                    while (fs << is.rdbuf())
+                        ;
+                    fs.flush();
                     cli.end_download();
-                }
-                catch(const std::exception& e)
-                {
+                } catch (const std::exception& e) {
                     fileList->put(fn);
                     throw e;
                 }
             }
             cli.logout();
-            retry=false;
+            retry = false;
         } catch (...) {
             perror("error");
             st_sleep(10);
-            retry=true;
+            retry = true;
         }
-    }while(retry);
+    } while (retry);
     return nullptr;
 }
 
-void *get_list(void *args) {
-    FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
+void* get_list(void* args)
+{
+    //    FTPClient cli("124.207.27.34", "21", "gzftpqas01", "001testgz");
+    FTPClient cli("14.222.65.142", "21", "worktib", "worktib");
     cli.open();
     cli.login();
-    cli.change_dir("/OUT/stockout/");
+    cli.change_dir("/home/worktib/dmtp/out/");
+    //    cli.change_dir("/OUT/stockout/");
     std::ofstream f("list.txt", std::ios::binary);
-    std::istream &is(cli.begin_list("."));
+    std::istream& is(cli.begin_list("."));
     std::string fn;
-    while (getline(is, fn)) {
+    while (std::getline(is, fn)) {
         if (fn.find(".xml") != fn.npos) {
             fn.erase(fn.find('\r'), fn.npos);
             f << fn << '\n';
@@ -61,60 +67,62 @@ void *get_list(void *args) {
     return 0;
 }
 
-void *upload_file(void* args)
+void* upload_file(void* args)
 {
-    auto retry=false;
-    auto *fileList = reinterpret_cast<STSyncQueue<std::string> *>(args);
-    do
-    {
+    auto retry = false;
+    auto* fileList = reinterpret_cast<STSyncQueue<std::string>*>(args);
+    do {
         try {
-            if(fileList->empty())
+            if (fileList->empty())
                 return 0;
-            FTPClient cli("172.16.120.128","21","lmz","gklmz2013");
+            //            FTPClient cli("172.16.120.128", "21", "lmz", "gklmz2013");
+            FTPClient cli("146.222.65.142", "21", "worktib", "worktib");
             cli.open();
             cli.login();
+            cli.change_dir("/home/worktib/dmtp/in");
             std::string fn;
-            while(!fileList->empty())
-            {
-            Tag:
+            while (!fileList->empty()) {
                 fileList->take(fn);
                 try {
                     std::ostream& os(cli.begin_upload(fn));
-                    FileSession fs(fn,O_RDONLY);
-                    while(fs.io()>>os.rdbuf());
+                    FileStream fs(fn, O_RDONLY);
+                    while (os << fs.rdbuf())
+                        ;
+                    os.flush();
                     cli.end_upload();
-                } catch (std::exception &e){
+                } catch (std::exception& e) {
                     fileList->put(fn);
-                    goto Tag;
+                    throw e;
                 }
             }
             cli.logout();
-            retry=false;
+            retry = false;
         } catch (...) {
-            retry=true;
+            retry = true;
             perror("error");
             st_sleep(10);
         }
-    }while(retry);
+    } while (retry);
     return 0;
 }
 
-int main() {
+int main()
+{
     st_set_eventsys(ST_EVENTSYS_ALT);
     st_init();
     std::ifstream f("list.txt", std::ios::binary);
     std::string fn;
     STSyncQueue<std::string> fileList(50000);
-    
+
     while (std::getline(f, fn)) {
         fileList.put(fn);
     }
     f.close();
-    
+
     std::vector<st_thread_t> tds;
-    for (int i = 0; i < 100; ++i)
-        tds.push_back(st_thread_create(work, &fileList, 1, 0));
-    //            tds.push_back(st_thread_create(upload_file, &fileList, 1, 0));
+    for (int i = 0; i < 5; ++i)
+        tds.push_back(st_thread_create(download_file, &fileList, 1, 0));
+    //        tds.push_back(st_thread_create(upload_file, &fileList, 1, 0));
     //        tds.push_back(st_thread_create(get_list, nullptr, 1, 0));
     st_thread_exit(0);
     //    for (auto td : tds)

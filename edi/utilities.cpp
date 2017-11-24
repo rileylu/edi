@@ -1,4 +1,5 @@
 #include "utilities.hpp"
+#include <cstring>
 
 addrinfo edi::getaddrinfo(const std::string& host, const std::string& servname)
 {

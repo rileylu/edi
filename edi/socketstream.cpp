@@ -1,21 +1,61 @@
-//
-//  socketstream.cpp
-//  edi
-//
-//  Created by lmz on 22/11/2017.
-//  Copyright © 2017 com.oocl. All rights reserved.
-//
-
 #include "socketstream.hpp"
-#include <exception>
+#include "utilities.hpp"
 
-ssize_t SocketStream::write(const void* buf, size_t len, st_utime_t timeout)
+SocketStream::SocketStream(const std::string& host, const std::string port, st_utime_t timeout)
+    : std::iostream()
+    , fd_(0)
+    , timeout_(timeout)
+    , buf_(nullptr)
 {
-    size_t nleft = len;
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0)
+        throw std::exception();
+    bool f = true;
+    ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &f, sizeof(f));
+    linger l = { 0, 0 };
+    ::setsockopt(fd, SOL_SOCKET, SO_LINGER, &l, sizeof(l));
+    fd_ = st_netfd_open_socket(fd);
+    if (fd_ == 0)
+        throw std::exception();
+    addrinfo addr = edi::getaddrinfo(host, port);
+    if (st_connect(fd_, addr.ai_addr, addr.ai_addrlen, timeout) < 0)
+        throw std::exception();
+    buf_.reset(new SocketStreamBuf(fd_, timeout));
+    rdbuf(buf_.get());
+}
+
+SocketStream::~SocketStream()
+{
+    if (buf_)
+        buf_.reset(nullptr);
+    if (fd_) {
+        int fd = st_netfd_fileno(fd_);
+        ::shutdown(fd, SHUT_RDWR);
+        st_netfd_close(fd_);
+    }
+}
+
+SocketStream::SocketStreamBuf::SocketStreamBuf(st_netfd_t fd, st_utime_t timeout)
+    : fd_(fd)
+    , timeout_(timeout)
+{
+}
+
+ssize_t SocketStream::SocketStreamBuf::read(STStreamBuf::char_type* buf, std::streamsize sz)
+{
+    ssize_t nread = st_read(fd_, buf, sz, timeout_);
+    if (nread < 0)
+        throw std::exception();
+    return nread;
+}
+
+ssize_t SocketStream::SocketStreamBuf::write(const STStreamBuf::char_type* buf, std::streamsize sz)
+{
+    size_t nleft = sz;
     ssize_t nwriten = 0;
     const char* ptr = reinterpret_cast<const char*>(buf);
     while (nleft > 0) {
-        nwriten = st_write(des_, ptr, nleft, timeout);
+        nwriten = st_write(fd_, ptr, nleft, timeout_);
         if (nwriten <= 0) {
             if (nwriten < 0 && errno == EINTR)
                 nwriten = 0;
@@ -25,38 +65,5 @@ ssize_t SocketStream::write(const void* buf, size_t len, st_utime_t timeout)
         nleft -= nwriten;
         ptr += nwriten;
     }
-    return len;
-}
-
-ssize_t SocketStream::read(void* buf, size_t len, st_utime_t timeout)
-{
-    ssize_t nread = st_read(des_, buf, len, timeout);
-    if (nread < 0)
-        throw std::exception();
-    return nread;
-}
-
-SocketStream::~SocketStream()
-{
-    if (des_)
-    {
-        int fd=st_netfd_fileno(des_);
-        ::shutdown(fd,SHUT_RDWR);
-        st_netfd_close(des_);
-    }
-}
-
-SocketStream::SocketStream()
-{
-    int s = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (s < 0)
-        throw std::exception();
-    des_ = st_netfd_open_socket(s);
-    if (des_ == 0)
-        throw std::exception();
-}
-
-st_netfd_t SocketStream::get_des() const
-{
-    return des_;
+    return sz;
 }
