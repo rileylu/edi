@@ -8,7 +8,7 @@ FileStream::FileStream(const std::string& path, int flags, mode_t mode, st_utime
     fd_ = st_open(path.c_str(), flags, mode);
     if (fd_ == nullptr)
         throw std::exception();
-    buf_.reset(new FileStreamBuf(fd_, timeout));
+    buf_.reset(new STStreamBuf(this));
     rdbuf(buf_.get());
 }
 
@@ -20,13 +20,7 @@ FileStream::~FileStream()
         st_netfd_close(fd_);
 }
 
-FileStream::FileStreamBuf::FileStreamBuf(st_netfd_t fd, st_utime_t timeout)
-    : fd_(fd)
-    , timeout_(timeout)
-{
-}
-
-ssize_t FileStream::FileStreamBuf::read(STStreamBuf::char_type* buf, std::streamsize sz)
+int FileStream::read(char* buf, std::size_t sz)
 {
     ssize_t n = 0;
     do {
@@ -37,7 +31,7 @@ ssize_t FileStream::FileStreamBuf::read(STStreamBuf::char_type* buf, std::stream
     return n;
 }
 
-ssize_t FileStream::FileStreamBuf::write(const STStreamBuf::char_type* buf, std::streamsize sz)
+int FileStream::write(const char* buf, std::size_t sz)
 {
     ssize_t n = 0;
     do {

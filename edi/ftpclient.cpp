@@ -45,8 +45,10 @@ void FTPClient::login()
 
 void FTPClient::parse_response(const std::string& res, const std::string& code)
 {
-    if (res.find(code) == res.npos)
+    if (res.find(code) == res.npos) {
+        std::fprintf(stderr, "%s\n", res);
         throw std::exception();
+    }
 }
 
 void FTPClient::logout()

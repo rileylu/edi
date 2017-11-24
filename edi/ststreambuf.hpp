@@ -1,27 +1,19 @@
 #pragma once
+#include "istream.h"
 #include "noncopyable.hpp"
 #include <array>
 #include <streambuf>
-
 class STStreamBuf : Noncopyable, public std::streambuf {
 public:
     const static std::size_t BUFSIZE = 1024;
-    STStreamBuf()
+    STStreamBuf(IStream* is = nullptr)
+        : is_(is)
     {
         reset();
     }
     virtual ~STStreamBuf();
 
 protected:
-    virtual ssize_t read(char_type* buf, std::streamsize sz)
-    {
-        return 0;
-    }
-    virtual ssize_t write(const char_type* buf, std::streamsize sz)
-    {
-        return 0;
-    }
-
     void reset()
     {
         setp(outbuf_.data(), outbuf_.data() + BUFSIZE - 1);
@@ -38,4 +30,5 @@ protected:
 private:
     std::array<char, BUFSIZE> inbuf_;
     std::array<char, BUFSIZE> outbuf_;
+    IStream* is_;
 };

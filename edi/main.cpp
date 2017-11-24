@@ -27,7 +27,6 @@ void* download_file(void* args)
                     FileStream fs(fn, O_CREAT | O_WRONLY | O_TRUNC);
                     while (fs << is.rdbuf())
                         ;
-                    fs.flush();
                     cli.end_download();
                 } catch (const std::exception& e) {
                     fileList->put(fn);
@@ -88,7 +87,6 @@ void* upload_file(void* args)
                     FileStream fs(fn, O_RDONLY);
                     while (os << fs.rdbuf())
                         ;
-                    os.flush();
                     cli.end_upload();
                 } catch (std::exception& e) {
                     fileList->put(fn);
@@ -120,7 +118,7 @@ int main()
     f.close();
 
     std::vector<st_thread_t> tds;
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 10; ++i)
         tds.push_back(st_thread_create(download_file, &fileList, 1, 0));
     //        tds.push_back(st_thread_create(upload_file, &fileList, 1, 0));
     //        tds.push_back(st_thread_create(get_list, nullptr, 1, 0));

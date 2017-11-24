@@ -24,4 +24,5 @@ HEADERS += \
     edi/stmutex.h \
     edi/ststreambuf.hpp \
     edi/stsyncqueue.hpp \
-    edi/utilities.hpp
+    edi/utilities.hpp \
+    edi/istream.h

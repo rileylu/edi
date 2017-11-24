@@ -20,7 +20,7 @@ SocketStream::SocketStream(const std::string& host, const std::string port, st_u
     addrinfo addr = edi::getaddrinfo(host, port);
     if (st_connect(fd_, addr.ai_addr, addr.ai_addrlen, timeout) < 0)
         throw std::exception();
-    buf_.reset(new SocketStreamBuf(fd_, timeout));
+    buf_.reset(new STStreamBuf(this));
     rdbuf(buf_.get());
 }
 
@@ -35,13 +35,7 @@ SocketStream::~SocketStream()
     }
 }
 
-SocketStream::SocketStreamBuf::SocketStreamBuf(st_netfd_t fd, st_utime_t timeout)
-    : fd_(fd)
-    , timeout_(timeout)
-{
-}
-
-ssize_t SocketStream::SocketStreamBuf::read(STStreamBuf::char_type* buf, std::streamsize sz)
+int SocketStream::read(char* buf, std::size_t sz)
 {
     ssize_t nread = st_read(fd_, buf, sz, timeout_);
     if (nread < 0)
@@ -49,7 +43,7 @@ ssize_t SocketStream::SocketStreamBuf::read(STStreamBuf::char_type* buf, std::st
     return nread;
 }
 
-ssize_t SocketStream::SocketStreamBuf::write(const STStreamBuf::char_type* buf, std::streamsize sz)
+int SocketStream::write(const char* buf, std::size_t sz)
 {
     size_t nleft = sz;
     ssize_t nwriten = 0;

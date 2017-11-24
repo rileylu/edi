@@ -15,7 +15,7 @@ STStreamBuf::int_type STStreamBuf::overflow(int_type c)
 int STStreamBuf::flushbuffer()
 {
     int num = int(pptr() - pbase());
-    if (write(outbuf_.data(), num) != num)
+    if (is_->write(outbuf_.data(), num) != num)
         return EOF;
     pbump(-num);
     return num;
@@ -43,7 +43,7 @@ int STStreamBuf::underflow()
         putback = 4;
     std::memmove(inbuf_.data() + (4 - putback), gptr() - putback, putback);
     int num;
-    num = int(read(inbuf_.data() + 4, BUFSIZE - 4));
+    num = int(is_->read(inbuf_.data() + 4, BUFSIZE - 4));
     if (num <= 0) {
         return EOF;
     }
