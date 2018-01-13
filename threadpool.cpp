@@ -8,17 +8,16 @@ ThreadPool::ThreadPool(int max_tds)
 
 ThreadPool::~ThreadPool()
 {
-    stop();
+    for (auto td : tds_) {
+        st_thread_join(td, 0);
+    }
+    tds_.clear();
 }
 
 void ThreadPool::stop()
 {
     task_list_.stop();
     running_ = false;
-    for (auto td : tds_) {
-        st_thread_join(td, 0);
-    }
-    tds_.clear();
 }
 
 void ThreadPool::add_task(ThreadPool::Task&& task)

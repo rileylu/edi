@@ -37,7 +37,11 @@ SocketStream::~SocketStream()
 
 int SocketStream::read(char* buf, std::size_t sz)
 {
-    ssize_t nread = st_read(fd_, buf, sz, timeout_);
+    ssize_t nread=-1;
+    do
+    {
+        nread = st_read(fd_, buf, sz, timeout_);
+    }while(nread<0&&errno==EINTR);
     if (nread < 0)
         throw std::exception();
     return nread;

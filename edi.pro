@@ -4,10 +4,8 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 INCLUDEPATH += /usr/local/include \
-               /Users/lmz/Downloads/st-1.9/DARWIN_17.2.0_DBG
 
 LIBS += -L/usr/local/lib \
-        -L/Users/lmz/Downloads/st-1.9/DARWIN_17.2.0_DBG \
         -ljemalloc \
         -lst
 
